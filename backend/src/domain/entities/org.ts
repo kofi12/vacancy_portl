@@ -1,10 +1,10 @@
 export class Organization {
 
-    private readonly _orgId!: string;
-    private readonly _ownerId!: string;
-    private _name!: string;
-    private _createdAt!: Date;
-    private _updatedAt!: Date;
+    private _orgId: string;
+    private _ownerId: string;
+    private _name: string;
+    private _createdAt: Date;
+    private _updatedAt: Date;
 
     constructor(
         ownerId: string,
@@ -33,11 +33,11 @@ export class Organization {
         this._updatedAt = time;
     }
 
-    has_owner(): boolean{
+    hasOwner(): boolean{
         return this._ownerId != null;
     }
 
-    org_factory(
+    orgFactory(
         ownerId: string,
         name: string,
         createdAt: Date,
