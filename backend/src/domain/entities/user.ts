@@ -54,7 +54,7 @@ export class User{
         this._createdAt = time;
     }
 
-    user_factory(
+    userFactory(
         role: Role,
         fullName: string,
         email: string,

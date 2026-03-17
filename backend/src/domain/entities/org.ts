@@ -33,11 +33,11 @@ export class Organization {
         this._updatedAt = time;
     }
 
-    has_owner(): boolean{
+    hasOwner(): boolean{
         return this._ownerId != null;
     }
 
-    org_factory(
+    orgFactory(
         ownerId: string,
         name: string,
         createdAt: Date,
