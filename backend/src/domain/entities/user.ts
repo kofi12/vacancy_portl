@@ -1,15 +1,15 @@
 export class User{
 
-    private readonly _id!: string;
-    private readonly _orgId!: string;
-    private _role!: Role;
-    private _fullName!: string;
-    private _email!: string;
-    private _phone!: string | null;
-    private _authProvider!: string | null;
-    private _authSubject!: string | null;
-    private _createdAt!: Date;
-    private _updatedAt!: Date | null;
+    private _id: string;
+    private _orgId: string;
+    private _role: Role;
+    private _fullName: string;
+    private _email: string;
+    private _phone: string | null;
+    private _authProvider: string | null;
+    private _authSubject: string | null;
+    private _createdAt: Date;
+    private _updatedAt: Date | null;
 
     constructor(
         role: Role,
@@ -54,7 +54,7 @@ export class User{
         this._createdAt = time;
     }
 
-    user_factory(
+    userFactory(
         role: Role,
         fullName: string,
         email: string,
