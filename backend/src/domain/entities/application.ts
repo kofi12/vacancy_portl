@@ -27,18 +27,19 @@ class Application {
         this._updatedAt = updatedAt;
     }
 
-    public get id(): string {return this._id;}
-    public get rcfId(): string {return this._rcfId;}
-    public get applicantId(): string {return this._applicantId;}
-    public get rpId(): string {return this._rpId;}
-    public get status(): Status {return this._status;}
-    public set status(value: Status) {this._status = value;}
-    public get submittedAt(): Date {return this._submittedAt;}
-    public set submittedAt(value: Date) {this._submittedAt = value;}
-    public get createdAt(): Date {return this._createdAt;}
-    public set createdAt(value: Date) {this._createdAt = value;}
-    public get updatedAt(): Date {return this._updatedAt;}
-    public set updatedAt(value: Date) {this._updatedAt = value;}
+    get id(): string {return this._id;}
+    get rcfId(): string {return this._rcfId;}
+    get applicantId(): string {return this._applicantId;}
+    get rpId(): string {return this._rpId;}
+    get status(): Status {return this._status;}
+    get submittedAt(): Date {return this._submittedAt;}
+    get createdAt(): Date {return this._createdAt;}
+    get updatedAt(): Date {return this._updatedAt;}
+
+    set status(value: Status) {this._status = value;}
+    set submittedAt(value: Date) {this._submittedAt = value;}
+    set createdAt(value: Date) {this._createdAt = value;}
+    set updatedAt(value: Date) {this._updatedAt = value;}
 
     applicationFactory(
 
