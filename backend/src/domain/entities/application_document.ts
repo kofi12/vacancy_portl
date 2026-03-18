@@ -2,7 +2,7 @@ class ApplicationDocument {
 
     private _id: string;
     private _applicantId: string;
-    private _templateId: string;
+    private _applicationId: string;
     private _type: FormType;
     private _originalFileName: string;
     private _contentType: ContentType;
@@ -10,7 +10,7 @@ class ApplicationDocument {
 
     get id(): string {return this._id;}
     get applicantId(): string {return this._applicantId;}
-    get templateId(): string {return this._templateId;}
+    get applicationId(): string {return this._applicationId;}
     get type(): FormType {return this._type;}
     get originalFileName(): string {return this._originalFileName;}
     get contentType(): ContentType {return this._contentType;}
@@ -23,14 +23,14 @@ class ApplicationDocument {
 
     constructor(
         applicantId: string,
-        templateId: string,
+        applicationId: string,
         type: FormType,
         originalFileName: string,
         contentType: ContentType,
         storageKey: string
     ){
         this._applicantId = applicantId;
-        this._templateId = templateId;
+        this._applicationId = applicationId;
         this._type = type;
         this._originalFileName = originalFileName;
         this._contentType = contentType;
