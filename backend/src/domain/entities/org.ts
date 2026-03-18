@@ -21,6 +21,7 @@ export class Organization {
     get name(): string{return this._name};
     get createdAt(): Date{return this._createdAt;}
     get updatedAt(): Date{return this._updatedAt;}
+
     set name(name: string){this._name=name;}
 
     set createdAt(time: Date){
