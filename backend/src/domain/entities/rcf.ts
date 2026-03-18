@@ -27,20 +27,21 @@ export class Rcf {
         this._updatedAt = updatedAt;
     }
 
-    public get id(): string {return this._id;}
-    public get orgId(): string {return this._orgId;}
-    public get name(): string {return this._name;}
-    public set name(value: string) {this._name = value;}
-    public get licensedBeds(): number {return this._licensedBeds;}
-    public set licensedBeds(value: number) {this._licensedBeds = value;}
-    public get currentOpenings(): number {return this._currentOpenings;}
-    public set currentOpenings(value: number) {this._currentOpenings = value;}
-    public get isActive(): boolean {return this._isActive;}
-    public set isActive(value: boolean) {this._isActive = value;}
-    public get createdAt(): Date {return this._createdAt;}
-    public set createdAt(value: Date) {this._createdAt = value;}
-    public get updatedAt(): Date {return this._updatedAt;}
-    public set updatedAt(value: Date) {this._updatedAt = value;}
+    get id(): string {return this._id;}
+    get orgId(): string {return this._orgId;}
+    get name(): string {return this._name;}
+    get licensedBeds(): number {return this._licensedBeds;}
+    get currentOpenings(): number {return this._currentOpenings;}
+    get isActive(): boolean {return this._isActive;}
+    get createdAt(): Date {return this._createdAt;}
+    get updatedAt(): Date {return this._updatedAt;}
+
+    set name(value: string) {this._name = value;}
+    set licensedBeds(value: number) {this._licensedBeds = value;}
+    set currentOpenings(value: number) {this._currentOpenings = value;}
+    set isActive(value: boolean) {this._isActive = value;}
+    set createdAt(value: Date) {this._createdAt = value;}
+    set updatedAt(value: Date) {this._updatedAt = value;}
 
     rcfFactory(
         orgId: string,

@@ -26,19 +26,20 @@ export class RcfForm {
         this._storageKey = storageKey;
     }
 
-    public get id(): string {return this._id;}
-    public get rcfId(): string {return this._rcfId;}
-    public get ownerId(): string {return this._ownerId;}
-    public get fileName(): string {return this._fileName;}
-    public set fileName(value: string) {this._fileName = value;}
-    public get title(): string {return this._title;}
-    public set title(value: string) {this._title = value;}
-    public get formType(): TemplateType {return this._formType;}
-    public set formType(value: TemplateType) {this._formType = value;}
-    public get contentType(): ContentType {return this._contentType;}
-    public set contentType(value: ContentType) {this._contentType = value;}
-    public get storageKey(): string {return this._storageKey;}
-    public set storageKey(value: string) {this._storageKey = value;}
+    get id(): string {return this._id;}
+    get rcfId(): string {return this._rcfId;}
+    get ownerId(): string {return this._ownerId;}
+    get fileName(): string {return this._fileName;}
+    get title(): string {return this._title;}
+    get formType(): TemplateType {return this._formType;}
+    get contentType(): ContentType {return this._contentType;}
+    get storageKey(): string {return this._storageKey;}
+
+    set fileName(value: string) {this._fileName = value;}
+    set title(value: string) {this._title = value;}
+    set formType(value: TemplateType) {this._formType = value;}
+    set contentType(value: ContentType) {this._contentType = value;}
+    set storageKey(value: string) {this._storageKey = value;}
 
     rcfFormFactory(
         rcfId: string,
