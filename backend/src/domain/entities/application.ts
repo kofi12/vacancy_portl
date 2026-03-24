@@ -1,3 +1,13 @@
+import {
+    NoRcfIdException,
+    NoApplicantIdException,
+    NoRpIdException,
+    NoStatusException,
+    NoSubmittedAtException,
+    NoCreatedAtException,
+    NoUpdatedAtException
+} from "../exceptions/application_exceptions.ts";
+
 class Application {
 
     private _id: string;
@@ -17,8 +27,9 @@ class Application {
         submittedAt: Date,
         createdAt: Date,
         updatedAt: Date,
-    ){
-        this._id = rfcId;
+    ) {
+        this._id = crypto.randomUUID();
+        this._rcfId = rfcId;
         this._applicantId = applicantId;
         this._rpId = rpId;
         this._status = status;
@@ -27,21 +38,21 @@ class Application {
         this._updatedAt = updatedAt;
     }
 
-    get id(): string {return this._id;}
-    get rcfId(): string {return this._rcfId;}
-    get applicantId(): string {return this._applicantId;}
-    get rpId(): string {return this._rpId;}
-    get status(): Status {return this._status;}
-    get submittedAt(): Date {return this._submittedAt;}
-    get createdAt(): Date {return this._createdAt;}
-    get updatedAt(): Date {return this._updatedAt;}
+    get id(): string { return this._id; }
+    get rcfId(): string { return this._rcfId; }
+    get applicantId(): string { return this._applicantId; }
+    get rpId(): string { return this._rpId; }
+    get status(): Status { return this._status; }
+    get submittedAt(): Date { return this._submittedAt; }
+    get createdAt(): Date { return this._createdAt; }
+    get updatedAt(): Date { return this._updatedAt; }
 
-    set status(value: Status) {this._status = value;}
-    set submittedAt(value: Date) {this._submittedAt = value;}
-    set createdAt(value: Date) {this._createdAt = value;}
-    set updatedAt(value: Date) {this._updatedAt = value;}
+    set status(value: Status) { this._status = value; }
+    set submittedAt(value: Date) { this._submittedAt = value; }
+    set createdAt(value: Date) { this._createdAt = value; }
+    set updatedAt(value: Date) { this._updatedAt = value; }
 
-    applicationFactory(
+    static create(
 
         rcfId: string,
         applicantId: string,
@@ -51,19 +62,28 @@ class Application {
         createdAt: Date,
         updatedAt: Date,
 
-    ){
-        this._rcfId = rcfId;
-        this._applicantId = applicantId;
-        this._rpId = rpId;
-        this._status = status;
-        this._submittedAt = submittedAt;
-        this._createdAt = createdAt;
-        this._updatedAt = updatedAt;
-    }
+    ) {
+        if (!rcfId) throw new NoRcfIdException("RCF ID is required", new Error());
+        if (!applicantId) throw new NoApplicantIdException("Applicant ID is required", new Error());
+        if (!rpId) throw new NoRpIdException("RP ID is required", new Error());
+        if (!status) throw new NoStatusException("Status is required", new Error());
+        if (!submittedAt) throw new NoSubmittedAtException("Submitted at is required", new Error());
+        if (!createdAt) throw new NoCreatedAtException("Created at is required", new Error());
+        if (!updatedAt) throw new NoUpdatedAtException("Updated at is required", new Error());
 
+        return new Application(
+            rcfId,
+            applicantId,
+            rpId,
+            status,
+            submittedAt,
+            createdAt,
+            updatedAt
+        );
+    }
 }
 
-enum Status{
+enum Status {
     "SUBMITTED",
     "PENDING"
 }
