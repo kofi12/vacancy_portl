@@ -1,3 +1,14 @@
+import {
+    NoApplicantIdException,
+    NoApplicationIdException,
+    NoContentTypeException,
+    NoOriginalFileNameException,
+    NoStorageKeyException,
+    NoTypeException,
+    InvalidFormTypeException,
+    InvalidContentTypeException,
+} from "../exceptions/application_document_exception.ts";
+
 class ApplicationDocument {
 
     private _id: string;
@@ -8,33 +19,73 @@ class ApplicationDocument {
     private _contentType: ContentType;
     private _storageKey: string;
 
-    get id(): string {return this._id;}
-    get applicantId(): string {return this._applicantId;}
-    get applicationId(): string {return this._applicationId;}
-    get type(): FormType {return this._type;}
-    get originalFileName(): string {return this._originalFileName;}
-    get contentType(): ContentType {return this._contentType;}
-    get storageKey(): string {return this._storageKey;}
+    get id(): string { return this._id; }
+    get applicantId(): string { return this._applicantId; }
+    get applicationId(): string { return this._applicationId; }
+    get type(): FormType { return this._type; }
+    get originalFileName(): string { return this._originalFileName; }
+    get contentType(): ContentType { return this._contentType; }
+    get storageKey(): string { return this._storageKey; }
 
-    set type(value: FormType) {this._type = value;}
-    set originalFileName(value: string) {this._originalFileName = value;}
-    set contentType(value: ContentType) {this._contentType = value;}
-    set storageKey(value: string) {this._storageKey = value;}
+    set type(value: FormType) {
+        if (!(value in FormType)) throw new InvalidFormTypeException("Invalid form type", new Error());
+        this._type = value;
+    }
+    set originalFileName(value: string) {
+        if (!value) throw new NoOriginalFileNameException("Original file name is required", new Error());
+        this._originalFileName = value;
+    }
+    set contentType(value: ContentType) {
+        if (!Object.values(ContentType).includes(value)) throw new InvalidContentTypeException("Invalid content type", new Error());
+        this._contentType = value;
+    }
+    set storageKey(value: string) {
+        if (!value) throw new NoStorageKeyException("Storage key is required", new Error());
+        this._storageKey = value;
+    }
 
-    constructor(
+    private constructor(
         applicantId: string,
         applicationId: string,
         type: FormType,
         originalFileName: string,
         contentType: ContentType,
         storageKey: string
-    ){
+    ) {
+        this._id = crypto.randomUUID();
         this._applicantId = applicantId;
         this._applicationId = applicationId;
         this._type = type;
         this._originalFileName = originalFileName;
         this._contentType = contentType;
         this._storageKey = storageKey;
+    }
+
+    static create(
+        applicantId: string,
+        applicationId: string,
+        type: FormType,
+        originalFileName: string,
+        contentType: ContentType,
+        storageKey: string,
+    ) {
+        if (!applicantId) throw new NoApplicantIdException("Applicant ID is required", new Error());
+        if (!applicationId) throw new NoApplicationIdException("Application ID is required", new Error());
+        if (type === undefined || type === null) throw new NoTypeException("Type is required", new Error());
+        if (!originalFileName) throw new NoOriginalFileNameException("Original file name is required", new Error());
+        if (!contentType) throw new NoContentTypeException("Content type is required", new Error());
+        if (!storageKey) throw new NoStorageKeyException("Storage key is required", new Error());
+        if (!(type in FormType)) throw new InvalidFormTypeException("Invalid form type", new Error());
+        if (!Object.values(ContentType).includes(contentType)) throw new InvalidContentTypeException("Invalid content type", new Error());
+
+        return new ApplicationDocument(
+            applicantId,
+            applicationId,
+            type,
+            originalFileName,
+            contentType,
+            storageKey
+        );
     }
 }
 
