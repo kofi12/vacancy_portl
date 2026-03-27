@@ -1,17 +1,5 @@
 import { DomainError } from "./domain_error.ts";
 
-export class NoRcfIdException extends DomainError {
-    constructor(message: string, error: Error) {
-        super(message, error);
-    }
-}
-
-export class NoApplicantIdException extends DomainError {
-    constructor(message: string, error: Error) {
-        super(message, error);
-    }
-}
-
 export class NoRpIdException extends DomainError {
     constructor(message: string, error: Error) {
         super(message, error);
