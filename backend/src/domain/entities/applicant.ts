@@ -13,8 +13,8 @@ export class Applicant {
     ) {
         this._id = crypto.randomUUID();
         this._rpId = rpId;
-        this._name = name;
         this._applicationId = applicationId;
+        this._name = name;
     }
 
     //getters
@@ -31,12 +31,13 @@ export class Applicant {
 
     static create(
         rpId: string,
+        name: string,
         applicationId?: string,
     ): Applicant {
         return new Applicant(
             rpId,
+            name,
             applicationId,
-            new Date(Date.now()),
         );
     }
 }
