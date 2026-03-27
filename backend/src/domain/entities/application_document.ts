@@ -1,15 +1,17 @@
 import {
-    NoApplicantIdException,
     NoApplicationIdException,
     NoContentTypeException,
     NoOriginalFileNameException,
-    NoStorageKeyException,
     NoTypeException,
+} from "../exceptions/application_document_exception.ts";
+import {
+    NoApplicantIdException,
+    NoStorageKeyException,
     InvalidFormTypeException,
     InvalidContentTypeException,
-} from "../exceptions/application_document_exception.ts";
+} from "../exceptions/shared_exceptions.ts";
 
-class ApplicationDocument {
+export class ApplicationDocument {
 
     private _id: string;
     private _applicantId: string;

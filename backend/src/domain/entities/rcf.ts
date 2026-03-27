@@ -17,7 +17,8 @@ export class Rcf {
         isActive: boolean,
         createdAt: Date,
         updatedAt: Date,
-    ){
+    ) {
+        this._id = crypto.randomUUID();
         this._orgId = orgId;
         this._name = name;
         this._licensedBeds = licensedBeds;
@@ -27,21 +28,21 @@ export class Rcf {
         this._updatedAt = updatedAt;
     }
 
-    get id(): string {return this._id;}
-    get orgId(): string {return this._orgId;}
-    get name(): string {return this._name;}
-    get licensedBeds(): number {return this._licensedBeds;}
-    get currentOpenings(): number {return this._currentOpenings;}
-    get isActive(): boolean {return this._isActive;}
-    get createdAt(): Date {return this._createdAt;}
-    get updatedAt(): Date {return this._updatedAt;}
+    get id(): string { return this._id; }
+    get orgId(): string { return this._orgId; }
+    get name(): string { return this._name; }
+    get licensedBeds(): number { return this._licensedBeds; }
+    get currentOpenings(): number { return this._currentOpenings; }
+    get isActive(): boolean { return this._isActive; }
+    get createdAt(): Date { return this._createdAt; }
+    get updatedAt(): Date { return this._updatedAt; }
 
-    set name(value: string) {this._name = value;}
-    set licensedBeds(value: number) {this._licensedBeds = value;}
-    set currentOpenings(value: number) {this._currentOpenings = value;}
-    set isActive(value: boolean) {this._isActive = value;}
-    set createdAt(value: Date) {this._createdAt = value;}
-    set updatedAt(value: Date) {this._updatedAt = value;}
+    set name(value: string) { this._name = value; }
+    set licensedBeds(value: number) { this._licensedBeds = value; }
+    set currentOpenings(value: number) { this._currentOpenings = value; }
+    set isActive(value: boolean) { this._isActive = value; }
+    set createdAt(value: Date) { this._createdAt = value; }
+    set updatedAt(value: Date) { this._updatedAt = value; }
 
     rcfFactory(
         orgId: string,
@@ -51,7 +52,7 @@ export class Rcf {
         isActive: boolean,
         createdAt: Date,
         updatedAt: Date,
-    ){
+    ) {
         this._orgId = orgId;
         this._name = name;
         this._licensedBeds = licensedBeds;

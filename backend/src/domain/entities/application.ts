@@ -1,12 +1,14 @@
 import {
-    NoRcfIdException,
-    NoApplicantIdException,
     NoRpIdException,
     NoStatusException,
     NoSubmittedAtException,
     NoCreatedAtException,
     NoUpdatedAtException
 } from "../exceptions/application_exceptions.ts";
+import {
+    NoRcfIdException,
+    NoApplicantIdException
+} from "../exceptions/shared_exceptions.ts";
 
 class Application {
 

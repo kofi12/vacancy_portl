@@ -1,12 +1,14 @@
 import {
-    NoRcfIdException,
     NoOwnerIdException,
     NoFileNameException,
-    NoTitleException,
-    InvalidFormTypeException,
-    InvalidContentTypeException,
-    NoStorageKeyException
+    NoTitleException
 } from "../exceptions/rcf_form_exceptions.ts";
+import {
+    NoRcfIdException,
+    NoStorageKeyException,
+    InvalidFormTypeException,
+    InvalidContentTypeException
+} from "../exceptions/shared_exceptions.ts";
 
 export class RcfForm {
     private _id: string;
