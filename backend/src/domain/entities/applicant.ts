@@ -1,3 +1,9 @@
+import {
+    NoRpIdException,
+    NoApplicationIdException,
+    NoNameException,
+} from "../exceptions/applicant_exceptions.ts";
+
 export class Applicant {
     private _id: string;
     private _rpId: string;
@@ -15,6 +21,7 @@ export class Applicant {
         this._rpId = rpId;
         this._applicationId = applicationId;
         this._name = name;
+        this._createdAt = new Date(Date.now());
     }
 
     //getters
@@ -27,13 +34,22 @@ export class Applicant {
     //setters
     set rpId(rpId: string) { this._rpId = rpId; }
     set applicationId(applicationId: string) { this._applicationId = applicationId; }
-    set updatedAt(updatedAt: Date | null) { this._updatedAt = updatedAt; }
+    set updatedAt(time: Date) {
+        time = new Date(Date.now());
+        this._updatedAt = time;
+    }
 
     static create(
         rpId: string,
         name: string,
         applicationId?: string,
     ): Applicant {
+
+        if (!rpId) throw new NoRpIdException("RP ID is required", new Error());
+        if (!name) throw new NoNameException("Name is required", new Error());
+        if (!applicationId) throw new NoApplicationIdException("Application ID is required", new Error());
+
+
         return new Applicant(
             rpId,
             name,
