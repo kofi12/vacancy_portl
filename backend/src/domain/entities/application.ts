@@ -10,7 +10,7 @@ import {
     NoApplicantIdException
 } from "../exceptions/shared_exceptions.ts";
 
-class Application {
+export class Application {
 
     private _id: string;
     private _rcfId: string;

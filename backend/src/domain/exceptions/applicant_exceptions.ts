@@ -6,12 +6,6 @@ export class NoRpIdException extends DomainError {
     }
 }
 
-export class NoApplicationIdException extends DomainError {
-    constructor(message: string, error: Error) {
-        super(message, error);
-    }
-}
-
 export class NoNameException extends DomainError {
     constructor(message: string, error: Error) {
         super(message, error);
