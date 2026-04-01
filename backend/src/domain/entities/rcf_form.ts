@@ -1,5 +1,4 @@
 import {
-    NoOwnerIdException,
     NoFileNameException,
     NoTitleException
 } from "../exceptions/rcf_form_exceptions.ts";
@@ -13,7 +12,6 @@ import {
 export class RcfForm {
     private _id: string;
     private _rcfId: string;
-    private _ownerId: string;
     private _fileName: string;
     private _title: string;
     private _formType: TemplateType;
@@ -22,7 +20,6 @@ export class RcfForm {
 
     constructor(
         rcfId: string,
-        ownerId: string,
         fileName: string,
         title: string,
         formType: TemplateType,
@@ -31,7 +28,6 @@ export class RcfForm {
     ) {
         this._id = crypto.randomUUID();
         this._rcfId = rcfId;
-        this._ownerId = ownerId;
         this._fileName = fileName;
         this._title = title;
         this._formType = formType;
@@ -41,7 +37,6 @@ export class RcfForm {
 
     get id(): string { return this._id; }
     get rcfId(): string { return this._rcfId; }
-    get ownerId(): string { return this._ownerId; }
     get fileName(): string { return this._fileName; }
     get title(): string { return this._title; }
     get formType(): TemplateType { return this._formType; }
@@ -56,7 +51,6 @@ export class RcfForm {
 
     static create(
         rcfId: string,
-        ownerId: string,
         fileName: string,
         title: string,
         formType: TemplateType,
@@ -64,7 +58,6 @@ export class RcfForm {
         storageKey: string,
     ) {
         if (!rcfId) throw new NoRcfIdException("RCF ID is required", new Error());
-        if (!ownerId) throw new NoOwnerIdException("Owner ID is required", new Error());
         if (!fileName) throw new NoFileNameException("File name is required", new Error());
         if (!title) throw new NoTitleException("Title is required", new Error());
         if (!(formType in TemplateType)) throw new InvalidFormTypeException("Form type is required", new Error());
@@ -74,7 +67,6 @@ export class RcfForm {
 
         return new RcfForm(
             rcfId,
-            ownerId,
             fileName,
             title,
             formType,
