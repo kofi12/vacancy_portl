@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useCallback } from "react"
 
-export type UserRole = "owner" | "referrer"
+export type UserRole = "owner" | "rp"
 
 export interface User {
   id: string
@@ -20,42 +20,41 @@ export interface Facility {
   address: string
   ownerId: string
   ownerName: string
-  status: "open" | "full"
-  bedCount: number
-  availableBeds: number
+  isActive: boolean
+  licensedBeds: number
+  currentOpenings: number
   notes: string
   lastUpdated: string
   phone: string
 }
 
-export interface InterestRecord {
+export interface Application {
   id: string
-  facilityId: string
-  facilityName: string
-  referrerId: string
-  referrerName: string
-  referrerEmail: string
-  referrerPhone: string
+  rcfId: string
+  rcfName: string
+  rpId: string
+  rpName: string
+  rpEmail: string
+  rpPhone: string
   applicantName: string
   applicantAge: string
   applicantNeeds: string
   contactNotes: string
   submittedAt: string
-  followedUp: boolean
-  followedUpAt?: string
+  status: "PENDING" | "SUBMITTED"
 }
 
 interface AppContextType {
   user: User | null
   isLoggedIn: boolean
   facilities: Facility[]
-  interests: InterestRecord[]
+  applications: Application[]
   login: (role: UserRole) => void
   logout: () => void
   completeProfile: (data: Partial<User>) => void
-  updateFacilityStatus: (facilityId: string, status: "open" | "full", availableBeds: number, notes: string) => void
-  registerInterest: (data: Omit<InterestRecord, "id" | "submittedAt" | "followedUp">) => void
-  followUp: (interestId: string) => void
+  updateFacilityStatus: (facilityId: string, isActive: boolean, currentOpenings: number, notes: string) => void
+  submitApplication: (data: Omit<Application, "id" | "submittedAt" | "status">) => void
+  updateApplicationStatus: (applicationId: string, status: "PENDING" | "SUBMITTED") => void
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined)
@@ -67,9 +66,9 @@ const MOCK_FACILITIES: Facility[] = [
     address: "142 Oak Lane, Springfield",
     ownerId: "owner1",
     ownerName: "Maria Chen",
-    status: "open",
-    bedCount: 6,
-    availableBeds: 2,
+    isActive: true,
+    licensedBeds: 6,
+    currentOpenings: 2,
     notes: "Two beds available in shared room. Accepting ambulatory residents.",
     lastUpdated: new Date(Date.now() - 2 * 60000).toISOString(),
     phone: "(555) 123-4567",
@@ -80,9 +79,9 @@ const MOCK_FACILITIES: Facility[] = [
     address: "88 Elm Street, Riverside",
     ownerId: "owner2",
     ownerName: "James Okafor",
-    status: "full",
-    bedCount: 4,
-    availableBeds: 0,
+    isActive: true,
+    licensedBeds: 4,
+    currentOpenings: 0,
     notes: "Currently full. Expecting a vacancy in approximately 2 weeks.",
     lastUpdated: new Date(Date.now() - 15 * 60000).toISOString(),
     phone: "(555) 234-5678",
@@ -93,9 +92,9 @@ const MOCK_FACILITIES: Facility[] = [
     address: "310 Birch Drive, Lakeview",
     ownerId: "owner3",
     ownerName: "Patricia Williams",
-    status: "full",
-    bedCount: 6,
-    availableBeds: 0,
+    isActive: true,
+    licensedBeds: 6,
+    currentOpenings: 0,
     notes: "No vacancies. Waitlist active.",
     lastUpdated: new Date(Date.now() - 45 * 60000).toISOString(),
     phone: "(555) 345-6789",
@@ -106,9 +105,9 @@ const MOCK_FACILITIES: Facility[] = [
     address: "55 Maple Court, Greenfield",
     ownerId: "owner4",
     ownerName: "Robert Martinez",
-    status: "open",
-    bedCount: 5,
-    availableBeds: 1,
+    isActive: true,
+    licensedBeds: 5,
+    currentOpenings: 1,
     notes: "One private room available. Wheelchair accessible.",
     lastUpdated: new Date(Date.now() - 5 * 60000).toISOString(),
     phone: "(555) 456-7890",
@@ -119,68 +118,67 @@ const MOCK_FACILITIES: Facility[] = [
     address: "200 Pine Ridge Road, Oakdale",
     ownerId: "owner1",
     ownerName: "Maria Chen",
-    status: "open",
-    bedCount: 4,
-    availableBeds: 3,
+    isActive: true,
+    licensedBeds: 4,
+    currentOpenings: 3,
     notes: "Multiple beds available. Recently renovated.",
     lastUpdated: new Date(Date.now() - 10 * 60000).toISOString(),
     phone: "(555) 567-8901",
   },
 ]
 
-const MOCK_INTERESTS: InterestRecord[] = [
+const MOCK_APPLICATIONS: Application[] = [
   {
-    id: "i1",
-    facilityId: "f2",
-    facilityName: "Maplewood Care Home",
-    referrerId: "ref1",
-    referrerName: "Sarah Johnson",
-    referrerEmail: "sarah.johnson@hospital.org",
-    referrerPhone: "(555) 111-2222",
+    id: "a1",
+    rcfId: "f2",
+    rcfName: "Maplewood Care Home",
+    rpId: "rp1",
+    rpName: "Sarah Johnson",
+    rpEmail: "sarah.johnson@hospital.org",
+    rpPhone: "(555) 111-2222",
     applicantName: "Dorothy Miller",
     applicantAge: "78",
     applicantNeeds: "Requires daily medication management and mobility assistance",
     contactNotes: "Preferred contact in the morning",
     submittedAt: new Date(Date.now() - 3 * 86400000).toISOString(),
-    followedUp: false,
+    status: "PENDING",
   },
   {
-    id: "i2",
-    facilityId: "f2",
-    facilityName: "Maplewood Care Home",
-    referrerId: "ref2",
-    referrerName: "Michael Torres",
-    referrerEmail: "m.torres@socialservices.gov",
-    referrerPhone: "(555) 333-4444",
+    id: "a2",
+    rcfId: "f2",
+    rcfName: "Maplewood Care Home",
+    rpId: "rp2",
+    rpName: "Michael Torres",
+    rpEmail: "m.torres@socialservices.gov",
+    rpPhone: "(555) 333-4444",
     applicantName: "Harold Simpson",
     applicantAge: "82",
     applicantNeeds: "Mild cognitive impairment, ambulatory",
     contactNotes: "Urgent placement needed within 30 days",
     submittedAt: new Date(Date.now() - 1 * 86400000).toISOString(),
-    followedUp: true,
-    followedUpAt: new Date(Date.now() - 12 * 3600000).toISOString(),
+    status: "SUBMITTED",
   },
   {
-    id: "i3",
-    facilityId: "f3",
-    facilityName: "Harmony House",
-    referrerId: "ref3",
-    referrerName: "Linda Park",
-    referrerEmail: "l.park@countyhealth.org",
-    referrerPhone: "(555) 555-6666",
+    id: "a3",
+    rcfId: "f3",
+    rcfName: "Harmony House",
+    rpId: "rp3",
+    rpName: "Linda Park",
+    rpEmail: "l.park@countyhealth.org",
+    rpPhone: "(555) 555-6666",
     applicantName: "George Washington",
     applicantAge: "75",
     applicantNeeds: "Needs wheelchair-accessible room, dietary restrictions",
     contactNotes: "Available weekdays 9-5 only",
     submittedAt: new Date(Date.now() - 5 * 86400000).toISOString(),
-    followedUp: false,
+    status: "PENDING",
   },
 ]
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [facilities, setFacilities] = useState<Facility[]>(MOCK_FACILITIES)
-  const [interests, setInterests] = useState<InterestRecord[]>(MOCK_INTERESTS)
+  const [applications, setApplications] = useState<Application[]>(MOCK_APPLICATIONS)
 
   const login = useCallback((role: UserRole) => {
     if (role === "owner") {
@@ -195,10 +193,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       })
     } else {
       setUser({
-        id: "ref-new",
+        id: "rp-new",
         name: "Alex Rivera",
         email: "alex.rivera@hospital.org",
-        role: "referrer",
+        role: "rp",
         organization: "",
         phone: "",
         profileCompleted: false,
@@ -214,32 +212,30 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setUser(prev => prev ? { ...prev, ...data, profileCompleted: true } : null)
   }, [])
 
-  const updateFacilityStatus = useCallback((facilityId: string, status: "open" | "full", availableBeds: number, notes: string) => {
+  const updateFacilityStatus = useCallback((facilityId: string, isActive: boolean, currentOpenings: number, notes: string) => {
     setFacilities(prev =>
       prev.map(f =>
         f.id === facilityId
-          ? { ...f, status, availableBeds, notes, lastUpdated: new Date().toISOString() }
+          ? { ...f, isActive, currentOpenings, notes, lastUpdated: new Date().toISOString() }
           : f
       )
     )
   }, [])
 
-  const registerInterest = useCallback((data: Omit<InterestRecord, "id" | "submittedAt" | "followedUp">) => {
-    const newInterest: InterestRecord = {
+  const submitApplication = useCallback((data: Omit<Application, "id" | "submittedAt" | "status">) => {
+    const newApplication: Application = {
       ...data,
-      id: `i${Date.now()}`,
+      id: `a${Date.now()}`,
       submittedAt: new Date().toISOString(),
-      followedUp: false,
+      status: "PENDING",
     }
-    setInterests(prev => [...prev, newInterest])
+    setApplications(prev => [...prev, newApplication])
   }, [])
 
-  const followUp = useCallback((interestId: string) => {
-    setInterests(prev =>
-      prev.map(i =>
-        i.id === interestId
-          ? { ...i, followedUp: true, followedUpAt: new Date().toISOString() }
-          : i
+  const updateApplicationStatus = useCallback((applicationId: string, status: "PENDING" | "SUBMITTED") => {
+    setApplications(prev =>
+      prev.map(a =>
+        a.id === applicationId ? { ...a, status } : a
       )
     )
   }, [])
@@ -250,13 +246,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         user,
         isLoggedIn: !!user,
         facilities,
-        interests,
+        applications,
         login,
         logout,
         completeProfile,
         updateFacilityStatus,
-        registerInterest,
-        followUp,
+        submitApplication,
+        updateApplicationStatus,
       }}
     >
       {children}

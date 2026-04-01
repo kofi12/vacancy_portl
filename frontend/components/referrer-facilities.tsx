@@ -29,10 +29,10 @@ import {
 import { formatDistanceToNow } from "date-fns"
 
 export function ReferrerFacilities() {
-  const { user, facilities, registerInterest } = useApp()
+  const { user, facilities, submitApplication } = useApp()
   const [searchQuery, setSearchQuery] = useState("")
-  const [statusFilter, setStatusFilter] = useState<"all" | "open" | "full">("all")
-  const [registerFacility, setRegisterFacility] = useState<Facility | null>(null)
+  const [statusFilter, setStatusFilter] = useState<"all" | "openings" | "no-vacancies">("all")
+  const [applyFacility, setApplyFacility] = useState<Facility | null>(null)
   const [applicantName, setApplicantName] = useState("")
   const [applicantAge, setApplicantAge] = useState("")
   const [applicantNeeds, setApplicantNeeds] = useState("")
@@ -44,46 +44,49 @@ export function ReferrerFacilities() {
     const matchesSearch =
       f.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       f.address.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesStatus = statusFilter === "all" || f.status === statusFilter
+    const matchesStatus =
+      statusFilter === "all" ||
+      (statusFilter === "openings" && f.isActive && f.currentOpenings > 0) ||
+      (statusFilter === "no-vacancies" && f.isActive && f.currentOpenings === 0)
     return matchesSearch && matchesStatus
   })
 
-  function openRegisterModal(facility: Facility) {
-    setRegisterFacility(facility)
+  function openApplyModal(facility: Facility) {
+    setApplyFacility(facility)
     setApplicantName("")
     setApplicantAge("")
     setApplicantNeeds("")
     setContactNotes("")
   }
 
-  function handleRegister() {
-    if (!registerFacility || !user) return
-    registerInterest({
-      facilityId: registerFacility.id,
-      facilityName: registerFacility.name,
-      referrerId: user.id,
-      referrerName: user.name,
-      referrerEmail: user.email,
-      referrerPhone: user.phone || "",
+  function handleApply() {
+    if (!applyFacility || !user) return
+    submitApplication({
+      rcfId: applyFacility.id,
+      rcfName: applyFacility.name,
+      rpId: user.id,
+      rpName: user.name,
+      rpEmail: user.email,
+      rpPhone: user.phone || "",
       applicantName,
       applicantAge,
       applicantNeeds,
       contactNotes,
     })
-    setRegisterFacility(null)
+    setApplyFacility(null)
     setShowSuccess(true)
     setTimeout(() => setShowSuccess(false), 3000)
   }
 
-  const openCount = facilities.filter((f) => f.status === "open").length
+  const openCount = facilities.filter((f) => f.isActive && f.currentOpenings > 0).length
 
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-start justify-between">
         <div>
-          <h2 className="text-2xl font-semibold text-foreground">Find Facilities</h2>
+          <h2 className="text-2xl font-semibold text-foreground">Find RCFs</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            {openCount} {openCount === 1 ? "facility" : "facilities"} currently with vacancies
+            {openCount} {openCount === 1 ? "RCF" : "RCFs"} currently with openings
           </p>
         </div>
         <Button
@@ -108,15 +111,19 @@ export function ReferrerFacilities() {
           />
         </div>
         <div className="flex gap-2">
-          {(["all", "open", "full"] as const).map((filter) => (
+          {([
+            { value: "all", label: "All" },
+            { value: "openings", label: "With Openings" },
+            { value: "no-vacancies", label: "No Vacancies" },
+          ] as const).map((filter) => (
             <Button
-              key={filter}
-              variant={statusFilter === filter ? "default" : "outline"}
+              key={filter.value}
+              variant={statusFilter === filter.value ? "default" : "outline"}
               size="sm"
-              className="rounded-xl capitalize"
-              onClick={() => setStatusFilter(filter)}
+              className="rounded-xl"
+              onClick={() => setStatusFilter(filter.value)}
             >
-              {filter === "all" ? "All" : filter === "open" ? "Open" : "Full"}
+              {filter.label}
             </Button>
           ))}
         </div>
@@ -142,14 +149,14 @@ export function ReferrerFacilities() {
                 </div>
                 <Badge
                   className={
-                    facility.status === "open"
+                    facility.isActive && facility.currentOpenings > 0
                       ? "rounded-lg bg-success text-success-foreground hover:bg-success/90"
                       : "rounded-lg bg-muted text-muted-foreground hover:bg-muted/90"
                   }
                 >
-                  {facility.status === "open"
-                    ? `Open (${facility.availableBeds})`
-                    : "Full"}
+                  {facility.isActive && facility.currentOpenings > 0
+                    ? `${facility.currentOpenings} opening${facility.currentOpenings !== 1 ? "s" : ""}`
+                    : "No Vacancies"}
                 </Badge>
               </div>
 
@@ -175,16 +182,14 @@ export function ReferrerFacilities() {
                   <Clock className="h-3.5 w-3.5" />
                   Updated {formatDistanceToNow(new Date(facility.lastUpdated), { addSuffix: true })}
                 </div>
-                {facility.status === "full" && (
-                  <Button
-                    size="sm"
-                    className="rounded-xl"
-                    onClick={() => openRegisterModal(facility)}
-                  >
-                    <UserPlus className="mr-2 h-4 w-4" />
-                    Register Interest
-                  </Button>
-                )}
+                <Button
+                  size="sm"
+                  className="rounded-xl"
+                  onClick={() => openApplyModal(facility)}
+                >
+                  <UserPlus className="mr-2 h-4 w-4" />
+                  Apply
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -195,25 +200,28 @@ export function ReferrerFacilities() {
         <Card className="rounded-2xl shadow-sm">
           <CardContent className="flex flex-col items-center justify-center py-16">
             <Search className="mb-3 h-10 w-10 text-muted-foreground" />
-            <p className="text-sm text-muted-foreground">No facilities match your search criteria.</p>
+            <p className="text-sm text-muted-foreground">No RCFs match your search criteria.</p>
           </CardContent>
         </Card>
       )}
 
-      {/* Register Interest Modal */}
-      <Dialog open={!!registerFacility} onOpenChange={(open) => !open && setRegisterFacility(null)}>
+      {/* Submit Application Modal */}
+      <Dialog open={!!applyFacility} onOpenChange={(open) => !open && setApplyFacility(null)}>
         <DialogContent className="rounded-2xl sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Register Interest</DialogTitle>
+            <DialogTitle>Submit Application</DialogTitle>
             <DialogDescription>
-              {registerFacility?.name} {"is currently full. Submit your details to be notified when a vacancy opens."}
+              {"Submit an application for an applicant to "}{applyFacility?.name}{"."}
+              {applyFacility && applyFacility.currentOpenings === 0 && (
+                <span className="mt-1 block">{"This RCF has no current openings — your application will be reviewed when a vacancy becomes available."}</span>
+              )}
             </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col gap-4">
             <div className="flex flex-col gap-2">
-              <Label htmlFor="reg-name">Applicant Name</Label>
+              <Label htmlFor="app-name">Applicant Name</Label>
               <Input
-                id="reg-name"
+                id="app-name"
                 className="rounded-xl"
                 placeholder="Full name of the prospective resident"
                 value={applicantName}
@@ -222,9 +230,9 @@ export function ReferrerFacilities() {
               />
             </div>
             <div className="flex flex-col gap-2">
-              <Label htmlFor="reg-age">Applicant Age</Label>
+              <Label htmlFor="app-age">Applicant Age</Label>
               <Input
-                id="reg-age"
+                id="app-age"
                 className="rounded-xl"
                 type="number"
                 placeholder="Age"
@@ -234,9 +242,9 @@ export function ReferrerFacilities() {
               />
             </div>
             <div className="flex flex-col gap-2">
-              <Label htmlFor="reg-needs">Care Needs</Label>
+              <Label htmlFor="app-needs">Care Needs</Label>
               <Textarea
-                id="reg-needs"
+                id="app-needs"
                 className="rounded-xl"
                 rows={2}
                 placeholder="Describe any specific care needs or requirements..."
@@ -246,9 +254,9 @@ export function ReferrerFacilities() {
               />
             </div>
             <div className="flex flex-col gap-2">
-              <Label htmlFor="reg-notes">Contact Preferences (optional)</Label>
+              <Label htmlFor="app-notes">Contact Preferences (optional)</Label>
               <Input
-                id="reg-notes"
+                id="app-notes"
                 className="rounded-xl"
                 placeholder="e.g., Best reached mornings, prefer email"
                 value={contactNotes}
@@ -256,19 +264,19 @@ export function ReferrerFacilities() {
               />
             </div>
             <div className="rounded-xl bg-secondary/50 p-3 text-xs text-muted-foreground">
-              {"Your contact information ("}{user?.email}{", "}{user?.phone}{") will be shared with the facility owner."}
+              {"Your contact information ("}{user?.email}{", "}{user?.phone}{") will be shared with the RCF owner."}
             </div>
           </div>
           <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="outline" className="rounded-xl" onClick={() => setRegisterFacility(null)}>
+            <Button variant="outline" className="rounded-xl" onClick={() => setApplyFacility(null)}>
               Cancel
             </Button>
             <Button
               className="rounded-xl"
-              onClick={handleRegister}
+              onClick={handleApply}
               disabled={!applicantName || !applicantAge || !applicantNeeds}
             >
-              Submit Interest
+              Submit Application
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -281,9 +289,9 @@ export function ReferrerFacilities() {
             <div className="flex h-14 w-14 items-center justify-center rounded-full bg-success/10">
               <CheckCircle2 className="h-7 w-7 text-success" />
             </div>
-            <DialogTitle>Interest Registered</DialogTitle>
+            <DialogTitle>Application Submitted</DialogTitle>
             <DialogDescription>
-              {"Your interest has been submitted with a timestamp. The facility owner will contact you when a vacancy becomes available."}
+              {"Your application has been submitted. The RCF owner will be in touch."}
             </DialogDescription>
           </div>
         </DialogContent>
