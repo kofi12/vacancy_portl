@@ -75,9 +75,9 @@ export function LoginScreen() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setSelectedRole("referrer")}
+                  onClick={() => setSelectedRole("rp")}
                   className={`flex flex-col items-center gap-2 rounded-xl border-2 p-4 text-center transition-colors ${
-                    selectedRole === "referrer"
+                    selectedRole === "rp"
                       ? "border-primary bg-primary/5 text-foreground"
                       : "border-border text-muted-foreground hover:border-primary/40"
                   }`}

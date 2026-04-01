@@ -22,8 +22,8 @@ import { formatDistanceToNow, format } from "date-fns"
 export function OwnerFacilities() {
   const { user, facilities, updateFacilityStatus } = useApp()
   const [editingFacility, setEditingFacility] = useState<Facility | null>(null)
-  const [editStatus, setEditStatus] = useState<"open" | "full">("open")
-  const [editBeds, setEditBeds] = useState("0")
+  const [editIsActive, setEditIsActive] = useState(true)
+  const [editOpenings, setEditOpenings] = useState("0")
   const [editNotes, setEditNotes] = useState("")
   const [showSuccess, setShowSuccess] = useState(false)
 
@@ -31,8 +31,8 @@ export function OwnerFacilities() {
 
   function openEditModal(facility: Facility) {
     setEditingFacility(facility)
-    setEditStatus(facility.status)
-    setEditBeds(String(facility.availableBeds))
+    setEditIsActive(facility.isActive)
+    setEditOpenings(String(facility.currentOpenings))
     setEditNotes(facility.notes)
   }
 
@@ -40,8 +40,8 @@ export function OwnerFacilities() {
     if (!editingFacility) return
     updateFacilityStatus(
       editingFacility.id,
-      editStatus,
-      parseInt(editBeds) || 0,
+      editIsActive,
+      parseInt(editOpenings) || 0,
       editNotes
     )
     setEditingFacility(null)
@@ -52,9 +52,9 @@ export function OwnerFacilities() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h2 className="text-2xl font-semibold text-foreground">My Facilities</h2>
+        <h2 className="text-2xl font-semibold text-foreground">My RCFs</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          {"Manage vacancy status for your residential care facilities."}
+          {"Manage vacancy status for your registered residential care facilities."}
         </p>
       </div>
 
@@ -74,24 +74,28 @@ export function OwnerFacilities() {
                 </div>
                 <Badge
                   className={
-                    facility.status === "open"
+                    facility.isActive && facility.currentOpenings > 0
                       ? "rounded-lg bg-success text-success-foreground hover:bg-success/90"
                       : "rounded-lg bg-muted text-muted-foreground hover:bg-muted/90"
                   }
                 >
-                  {facility.status === "open" ? "Open" : "Full"}
+                  {facility.isActive
+                    ? facility.currentOpenings > 0
+                      ? `${facility.currentOpenings} opening${facility.currentOpenings !== 1 ? "s" : ""}`
+                      : "No Vacancies"
+                    : "Inactive"}
                 </Badge>
               </div>
             </CardHeader>
             <CardContent>
               <div className="mb-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
                 <div className="rounded-xl bg-secondary/50 p-3">
-                  <p className="text-xs text-muted-foreground">Total Beds</p>
-                  <p className="text-lg font-semibold text-foreground">{facility.bedCount}</p>
+                  <p className="text-xs text-muted-foreground">Licensed Beds</p>
+                  <p className="text-lg font-semibold text-foreground">{facility.licensedBeds}</p>
                 </div>
                 <div className="rounded-xl bg-secondary/50 p-3">
-                  <p className="text-xs text-muted-foreground">Available</p>
-                  <p className="text-lg font-semibold text-success">{facility.availableBeds}</p>
+                  <p className="text-xs text-muted-foreground">Current Openings</p>
+                  <p className="text-lg font-semibold text-success">{facility.currentOpenings}</p>
                 </div>
                 <div className="col-span-2 rounded-xl bg-secondary/50 p-3">
                   <p className="text-xs text-muted-foreground">Notes</p>
@@ -127,7 +131,7 @@ export function OwnerFacilities() {
           <DialogHeader>
             <DialogTitle>Update Vacancy Status</DialogTitle>
             <DialogDescription>
-              {editingFacility?.name} — {"Change the status and notify interested parties."}
+              {editingFacility?.name} — {"Update the current openings and active status."}
             </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col gap-4">
@@ -136,41 +140,41 @@ export function OwnerFacilities() {
               <div className="grid grid-cols-2 gap-3">
                 <button
                   type="button"
-                  onClick={() => setEditStatus("open")}
+                  onClick={() => setEditIsActive(true)}
                   className={`flex items-center justify-center gap-2 rounded-xl border-2 p-3 text-sm font-medium transition-colors ${
-                    editStatus === "open"
+                    editIsActive
                       ? "border-success bg-success/5 text-success"
                       : "border-border text-muted-foreground hover:border-success/40"
                   }`}
                 >
                   <CheckCircle2 className="h-4 w-4" />
-                  Open
+                  Active
                 </button>
                 <button
                   type="button"
-                  onClick={() => setEditStatus("full")}
+                  onClick={() => setEditIsActive(false)}
                   className={`flex items-center justify-center gap-2 rounded-xl border-2 p-3 text-sm font-medium transition-colors ${
-                    editStatus === "full"
+                    !editIsActive
                       ? "border-muted-foreground bg-muted text-muted-foreground"
                       : "border-border text-muted-foreground hover:border-muted-foreground/40"
                   }`}
                 >
-                  Full
+                  Inactive
                 </button>
               </div>
             </div>
 
-            {editStatus === "open" && (
+            {editIsActive && (
               <div className="flex flex-col gap-2">
-                <Label htmlFor="edit-beds">Available Beds</Label>
+                <Label htmlFor="edit-openings">Current Openings</Label>
                 <Input
-                  id="edit-beds"
+                  id="edit-openings"
                   type="number"
                   min="0"
-                  max={editingFacility?.bedCount || 10}
+                  max={editingFacility?.licensedBeds || 10}
                   className="rounded-xl"
-                  value={editBeds}
-                  onChange={(e) => setEditBeds(e.target.value)}
+                  value={editOpenings}
+                  onChange={(e) => setEditOpenings(e.target.value)}
                 />
               </div>
             )}
@@ -188,7 +192,7 @@ export function OwnerFacilities() {
             </div>
 
             <div className="rounded-xl bg-primary/5 p-3 text-sm text-primary">
-              {"Saving will timestamp the change and auto-notify all interested parties if status changes to Open."}
+              {"Saving will timestamp the change and notify all referring professionals with pending applications."}
             </div>
           </div>
           <DialogFooter className="gap-2 sm:gap-0">
@@ -211,7 +215,7 @@ export function OwnerFacilities() {
             </div>
             <DialogTitle>Status Updated</DialogTitle>
             <DialogDescription>
-              {"Vacancy status saved with timestamp. Interested parties have been notified."}
+              {"Vacancy status saved. Referring professionals with pending applications have been notified."}
             </DialogDescription>
           </div>
         </DialogContent>

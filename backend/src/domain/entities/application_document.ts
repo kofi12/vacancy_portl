@@ -5,7 +5,6 @@ import {
     NoTypeException,
 } from "../exceptions/application_document_exception.ts";
 import {
-    NoApplicantIdException,
     NoStorageKeyException,
     InvalidFormTypeException,
     InvalidContentTypeException,
@@ -14,7 +13,6 @@ import {
 export class ApplicationDocument {
 
     private _id: string;
-    private _applicantId: string;
     private _applicationId: string;
     private _type: FormType;
     private _originalFileName: string;
@@ -22,7 +20,6 @@ export class ApplicationDocument {
     private _storageKey: string;
 
     get id(): string { return this._id; }
-    get applicantId(): string { return this._applicantId; }
     get applicationId(): string { return this._applicationId; }
     get type(): FormType { return this._type; }
     get originalFileName(): string { return this._originalFileName; }
@@ -47,7 +44,6 @@ export class ApplicationDocument {
     }
 
     private constructor(
-        applicantId: string,
         applicationId: string,
         type: FormType,
         originalFileName: string,
@@ -55,7 +51,6 @@ export class ApplicationDocument {
         storageKey: string
     ) {
         this._id = crypto.randomUUID();
-        this._applicantId = applicantId;
         this._applicationId = applicationId;
         this._type = type;
         this._originalFileName = originalFileName;
@@ -64,14 +59,12 @@ export class ApplicationDocument {
     }
 
     static create(
-        applicantId: string,
         applicationId: string,
         type: FormType,
         originalFileName: string,
         contentType: ContentType,
         storageKey: string,
     ) {
-        if (!applicantId) throw new NoApplicantIdException("Applicant ID is required", new Error());
         if (!applicationId) throw new NoApplicationIdException("Application ID is required", new Error());
         if (type === undefined || type === null) throw new NoTypeException("Type is required", new Error());
         if (!originalFileName) throw new NoOriginalFileNameException("Original file name is required", new Error());
@@ -81,7 +74,6 @@ export class ApplicationDocument {
         if (!Object.values(ContentType).includes(contentType)) throw new InvalidContentTypeException("Invalid content type", new Error());
 
         return new ApplicationDocument(
-            applicantId,
             applicationId,
             type,
             originalFileName,

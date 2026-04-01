@@ -22,18 +22,18 @@ export function AppSidebar({ activeView, onNavigate }: AppSidebarProps) {
 
   const ownerNavItems = [
     { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { id: "my-facility", label: "My Facilities", icon: Building2 },
-    { id: "interests", label: "Interest List", icon: Users },
+    { id: "my-facility", label: "My RCFs", icon: Building2 },
+    { id: "interests", label: "Applications", icon: Users },
     { id: "profile", label: "Profile", icon: UserCircle },
   ]
 
-  const referrerNavItems = [
-    { id: "facilities", label: "Find Facilities", icon: Search },
-    { id: "my-interests", label: "My Registrations", icon: ClipboardList },
+  const rpNavItems = [
+    { id: "facilities", label: "Find RCFs", icon: Search },
+    { id: "my-interests", label: "My Applications", icon: ClipboardList },
     { id: "profile", label: "Profile", icon: UserCircle },
   ]
 
-  const navItems = user?.role === "owner" ? ownerNavItems : referrerNavItems
+  const navItems = user?.role === "owner" ? ownerNavItems : rpNavItems
 
   return (
     <aside className="flex h-full w-64 flex-col rounded-2xl bg-card p-4 shadow-sm">
@@ -77,7 +77,7 @@ export function AppSidebar({ activeView, onNavigate }: AppSidebarProps) {
           </div>
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-medium text-foreground">{user?.name}</p>
-            <p className="truncate text-xs text-muted-foreground capitalize">{user?.role === "owner" ? "Owner/Operator" : "Referring Professional"}</p>
+            <p className="truncate text-xs text-muted-foreground capitalize">{user?.role === "owner" ? "Owner / Operator" : "Referring Professional"}</p>
           </div>
         </div>
         <button
