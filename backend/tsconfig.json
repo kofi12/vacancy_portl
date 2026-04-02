@@ -1,8 +1,10 @@
 {
   "compilerOptions": {
-    "target": "ESNext",
-    "module": "NodeNext",
+    "target": "ES2023",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
     "strict": true,
+    "esModuleInterop": true,
     "strictPropertyInitialization": false,
     "verbatimModuleSyntax": true,
     "skipLibCheck": true,
@@ -18,6 +20,7 @@
     "declaration": true,
   },
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "prisma.config.ts"
   ]
 }
