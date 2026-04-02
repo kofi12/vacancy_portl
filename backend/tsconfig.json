@@ -9,8 +9,7 @@
     "verbatimModuleSyntax": true,
     "skipLibCheck": true,
     "types": [
-      "node",
-      "module"
+      "node"
     ],
     "jsx": "react-jsx",
     "jsxImportSource": "hono/jsx",
