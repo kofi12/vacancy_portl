@@ -81,7 +81,7 @@ CREATE TABLE "Application" (
     "applicantId" TEXT NOT NULL,
     "rpId" TEXT NOT NULL,
     "status" "Status" NOT NULL,
-    "submittedAt" TIMESTAMP(3) NOT NULL,
+    "submittedAt" TIMESTAMP(3),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 

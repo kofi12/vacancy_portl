@@ -27,4 +27,4 @@ lerna-debug.log*
 # misc
 .DS_Store
 CLAUDE.md
-/generated/prisma
+/src/infrastructure/persistence/generated/prisma
