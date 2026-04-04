@@ -41,8 +41,6 @@ export class UserMapper {
             phone: user.phone,
             authProvider: user.authProvider,
             authSubject: user.authSubject,
-            createdAt: user.createdAt,
-            updatedAt: user.updatedAt
         }
     }
 }
