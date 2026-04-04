@@ -85,7 +85,7 @@ export class Application {
     }
 }
 
-enum Status {
-    "SUBMITTED",
-    "PENDING"
+export enum Status {
+    SUBMITTED = "SUBMITTED",
+    PENDING = "PENDING",
 }

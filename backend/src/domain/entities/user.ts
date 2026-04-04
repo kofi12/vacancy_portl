@@ -45,8 +45,8 @@ export class User {
     get phone(): string | null { return this._phone; }
     get authProvider(): string | null { return this._authProvider; }
     get authSubject(): string | null { return this._authSubject; }
-    get created_at(): Date { return this._createdAt; }
-    get updated_at(): Date | null { return this._updatedAt; }
+    get createdAt(): Date { return this._createdAt; }
+    get updatedAt(): Date | null { return this._updatedAt; }
 
     //setters
     set role(role: Role) { this._role = role; }
@@ -102,10 +102,35 @@ export class User {
             authSubject,
         );
     }
+
+    static reconstitute(
+        id: string,
+        role: Role,
+        fullName: string,
+        email: string,
+        phone: string | null,
+        authProvider: string | null,
+        authSubject: string | null,
+        createdAt: Date,
+        updatedAt: Date | null,
+    ): User {
+        const user = new User(
+            role,
+            fullName,
+            email,
+            phone,
+            authProvider,
+            authSubject,
+        );
+        user._id = id;
+        user._createdAt = createdAt;
+        user._updatedAt = updatedAt;
+        return user;
+    }
 }
 
-enum Role {
-    "owner",
-    "rp",
-    "admin"
+export enum Role {
+    OWNER = "OWNER",
+    RP = "RP",
+    ADMIN = "ADMIN",
 }
