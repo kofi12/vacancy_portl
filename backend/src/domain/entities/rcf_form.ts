@@ -76,15 +76,15 @@ export class RcfForm {
     }
 }
 
-enum TemplateType {
-    "INTAKE_FORM",
-    "SCHEDULE_20",
-    "CUSTOM",
+export enum TemplateType {
+    INTAKE_FORM = "INTAKE_FORM",
+    SCHEDULE_20 = "SCHEDULE_20",
+    CUSTOM = "CUSTOM",
 }
 
-enum ContentType {
-    "PDF" = 'application/pdf',
-    "JSON" = 'application/json',
-    "ZIP" = 'application/zip',
-    "MULTIPART" = 'multipart/form-data'
+export enum ContentType {
+    PDF = "PDF",
+    JSON = "JSON",
+    ZIP = "ZIP",
+    MULTIPART = "MULTIPART",
 }
