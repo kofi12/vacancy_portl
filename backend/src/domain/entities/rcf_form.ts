@@ -18,7 +18,7 @@ export class RcfForm {
     private _contentType: ContentType;
     private _storageKey: string;
 
-    constructor(
+    private constructor(
         rcfId: string,
         fileName: string,
         title: string,

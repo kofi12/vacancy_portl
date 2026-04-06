@@ -12,3 +12,8 @@ export class NoNameException extends DomainError {
     }
 }
 
+export class OrganizationNotFoundException extends DomainError {
+    constructor(identifier: string) {
+        super(`Organization not found: ${identifier}`);
+    }
+}

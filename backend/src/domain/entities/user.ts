@@ -19,7 +19,7 @@ export class User {
     private _createdAt: Date;
     private _updatedAt: Date | null;
 
-    constructor(
+    private constructor(
         role: Role,
         fullName: string,
         email: string,

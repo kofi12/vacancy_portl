@@ -21,7 +21,7 @@ export class Application {
     private _createdAt: Date;
     private _updatedAt: Date;
 
-    constructor(
+    private constructor(
         rfcId: string,
         applicantId: string,
         rpId: string,
