@@ -5,6 +5,7 @@ import type { UserRepo } from '../../../domain/repositories/user_repo.ts';
 import { prisma } from '../prisma/prisma_client.ts';
 
 export class UserInfrastructure implements UserRepo {
+
     async findByEmail(email: string): Promise<User> {
         // need to access the user table and check for a user that matches the email
         const user = await prisma.user.findUnique({ where: { email } });

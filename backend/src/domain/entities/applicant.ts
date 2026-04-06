@@ -10,7 +10,7 @@ export class Applicant {
     private _createdAt: Date;
     private _updatedAt: Date | null;
 
-    constructor(
+    private constructor(
         rpId: string,
         name: string,
     ) {
