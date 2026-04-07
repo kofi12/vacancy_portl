@@ -56,7 +56,7 @@ export class RcfForm {
         formType: TemplateType,
         contentType: ContentType,
         storageKey: string,
-    ) {
+    ): RcfForm {
         if (!rcfId) throw new NoRcfIdException("RCF ID is required", new Error());
         if (!fileName) throw new NoFileNameException("File name is required", new Error());
         if (!title) throw new NoTitleException("Title is required", new Error());
@@ -73,6 +73,27 @@ export class RcfForm {
             contentType,
             storageKey,
         )
+    }
+
+    static reconstitute(
+        id: string,
+        rcfId: string,
+        fileName: string,
+        title: string,
+        formType: TemplateType,
+        contentType: ContentType,
+        storageKey: string,
+    ): RcfForm {
+        const rcfForm = new RcfForm(
+            rcfId,
+            fileName,
+            title,
+            formType,
+            contentType,
+            storageKey,
+        );
+        rcfForm._id = id;
+        return rcfForm;
     }
 }
 

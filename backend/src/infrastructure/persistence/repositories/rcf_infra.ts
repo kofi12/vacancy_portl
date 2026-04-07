@@ -42,14 +42,17 @@ export class RcfInfrastructure implements RcfRepo {
                 data: RcfMapper.toPrisma(entity),
             })
         } catch (e) {
-
+            throw new RcfNotFoundException("Rcf does not exist");
         }
-        throw new Error('Method not implemented.');
+        return entity;
     }
 
     async delete(id: string): Promise<Rcf> {
-        throw new Error('Method not implemented.');
+        try {
+            const deleted = await prisma.rcf.delete({ where: { id } });
+            return RcfMapper.toDomain(deleted);
+        } catch {
+            throw new RcfNotFoundException("Rcf doesn't exist");
+        }
     }
-}
-
 }
