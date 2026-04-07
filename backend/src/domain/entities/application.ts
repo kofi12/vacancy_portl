@@ -83,6 +83,34 @@ export class Application {
             updatedAt
         );
     }
+
+    static reconstitute(
+        id: string,
+        rcfId: string,
+        applicantId: string,
+        rpId: string,
+        status: Status,
+        submittedAt: Date,
+        createdAt: Date,
+        updatedAt: Date,
+    ) {
+        const application = new Application(
+            rcfId,
+            applicantId,
+            rpId,
+            status,
+            submittedAt,
+            createdAt,
+            updatedAt,
+        );
+
+        application._id = id;
+        application._submittedAt = submittedAt;
+        application._createdAt = createdAt;
+        application.updatedAt = updatedAt;
+
+        return application;
+    }
 }
 
 export enum Status {
