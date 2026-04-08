@@ -9,25 +9,26 @@ import {
     InvalidFormTypeException,
     InvalidContentTypeException,
 } from "../exceptions/shared_exceptions.ts";
+import { TemplateType } from './rcf_form.ts';
 
 export class ApplicationDocument {
 
     private _id: string;
     private _applicationId: string;
-    private _type: FormType;
+    private _type: TemplateType;
     private _originalFileName: string;
     private _contentType: ContentType;
     private _storageKey: string;
 
     get id(): string { return this._id; }
     get applicationId(): string { return this._applicationId; }
-    get type(): FormType { return this._type; }
+    get type(): TemplateType { return this._type; }
     get originalFileName(): string { return this._originalFileName; }
     get contentType(): ContentType { return this._contentType; }
     get storageKey(): string { return this._storageKey; }
 
-    set type(value: FormType) {
-        if (!(value in FormType)) throw new InvalidFormTypeException("Invalid form type", new Error());
+    set type(value: TemplateType) {
+        if (!(value in TemplateType)) throw new InvalidFormTypeException("Invalid form type", new Error());
         this._type = value;
     }
     set originalFileName(value: string) {
@@ -45,7 +46,7 @@ export class ApplicationDocument {
 
     private constructor(
         applicationId: string,
-        type: FormType,
+        type: TemplateType,
         originalFileName: string,
         contentType: ContentType,
         storageKey: string
@@ -60,7 +61,7 @@ export class ApplicationDocument {
 
     static create(
         applicationId: string,
-        type: FormType,
+        type: TemplateType,
         originalFileName: string,
         contentType: ContentType,
         storageKey: string,
@@ -70,7 +71,7 @@ export class ApplicationDocument {
         if (!originalFileName) throw new NoOriginalFileNameException("Original file name is required", new Error());
         if (!contentType) throw new NoContentTypeException("Content type is required", new Error());
         if (!storageKey) throw new NoStorageKeyException("Storage key is required", new Error());
-        if (!(type in FormType)) throw new InvalidFormTypeException("Invalid form type", new Error());
+        if (!(type in TemplateType)) throw new InvalidFormTypeException("Invalid form type", new Error());
         if (!Object.values(ContentType).includes(contentType)) throw new InvalidContentTypeException("Invalid content type", new Error());
 
         return new ApplicationDocument(
@@ -80,6 +81,27 @@ export class ApplicationDocument {
             contentType,
             storageKey
         );
+    }
+
+    static reconstitute(
+        id: string,
+        applicationId: string,
+        type: TemplateType,
+        originalFileName: string,
+        contentType: ContentType,
+        storageKey: string,
+    ): ApplicationDocument {
+
+        const applicationDocument = new ApplicationDocument(
+            applicationId,
+            type,
+            originalFileName,
+            contentType,
+            storageKey,
+        );
+        applicationDocument._id = id;
+
+        return applicationDocument;
     }
 }
 

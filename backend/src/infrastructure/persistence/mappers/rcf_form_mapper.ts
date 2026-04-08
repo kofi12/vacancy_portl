@@ -1,6 +1,6 @@
-import { RcfForm } from '../../../domain/entities/rcf_form';
+import { RcfForm, TemplateType, ContentType } from '../../../domain/entities/rcf_form';
 import type { RcfFormModel } from '../generated/prisma/models/RcfForm';
-import type { TemplateType, ContentType } from '../generated/prisma/enums';
+import type { TemplateType as PrismaTemplateType, ContentType as PrismaContentType } from '../generated/prisma/enums';
 
 
 export class RcfFormMapper {
@@ -19,8 +19,8 @@ export class RcfFormMapper {
             rcfId,
             fileName,
             title,
-            formType,
-            contentType,
+            formType as unknown as TemplateType,
+            contentType as unknown as ContentType,
             storageKey,
         )
     }
@@ -31,8 +31,8 @@ export class RcfFormMapper {
             rcfId: rcfForm.rcfId,
             fileName: rcfForm.fileName,
             title: rcfForm.title,
-            formType: rcfForm.formType,
-            contentType: rcfForm.contentType,
+            formType: rcfForm.formType as unknown as PrismaTemplateType,
+            contentType: rcfForm.contentType as unknown as PrismaContentType,
             storageKey: rcfForm.storageKey,
         }
     }
