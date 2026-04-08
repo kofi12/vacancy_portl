@@ -1,5 +1,6 @@
 import type { ApplicationModel } from '../generated/prisma/models/Application';
-import { Application } from '../../../domain/entities/application';
+import type { Status as PrismaStatus } from '../generated/prisma/enums.ts';
+import { Application, Status } from '../../../domain/entities/application';
 
 export class ApplicationMapper {
 
@@ -18,7 +19,7 @@ export class ApplicationMapper {
             rcfId,
             applicantId,
             rpId,
-            status,
+            status as unknown as Status,
             submittedAt,
             createdAt,
             updatedAt,
@@ -31,7 +32,7 @@ export class ApplicationMapper {
             rcfId: application.rcfId,
             applicantId: application.applicantId,
             rpId: application.rpId,
-            status: application.status,
+            status: application.status as unknown as PrismaStatus,
             submittedAt: application.submittedAt,
             createdAt: application.createdAt,
             updatedAt: application.updatedAt,
