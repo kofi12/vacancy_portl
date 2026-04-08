@@ -11,3 +11,21 @@ export class NoNameException extends DomainError {
         super(message, error);
     }
 }
+
+export class ApplicantNotFoundException extends DomainError {
+    constructor(message: string, error?: Error) {
+        super(message, error);
+    }
+}
+
+export class ApplicantUpdateException extends DomainError {
+    constructor(message: string, error?: Error) {
+        super(message, error);
+    }
+}
+
+export class ApplicantDeleteException extends DomainError {
+    constructor(message: string, error?: Error) {
+        super(message, error);
+    }
+}

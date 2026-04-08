@@ -18,7 +18,7 @@ export class RcfForm {
     private _contentType: ContentType;
     private _storageKey: string;
 
-    constructor(
+    private constructor(
         rcfId: string,
         fileName: string,
         title: string,
@@ -56,7 +56,7 @@ export class RcfForm {
         formType: TemplateType,
         contentType: ContentType,
         storageKey: string,
-    ) {
+    ): RcfForm {
         if (!rcfId) throw new NoRcfIdException("RCF ID is required", new Error());
         if (!fileName) throw new NoFileNameException("File name is required", new Error());
         if (!title) throw new NoTitleException("Title is required", new Error());
@@ -74,17 +74,38 @@ export class RcfForm {
             storageKey,
         )
     }
+
+    static reconstitute(
+        id: string,
+        rcfId: string,
+        fileName: string,
+        title: string,
+        formType: TemplateType,
+        contentType: ContentType,
+        storageKey: string,
+    ): RcfForm {
+        const rcfForm = new RcfForm(
+            rcfId,
+            fileName,
+            title,
+            formType,
+            contentType,
+            storageKey,
+        );
+        rcfForm._id = id;
+        return rcfForm;
+    }
 }
 
-enum TemplateType {
-    "INTAKE_FORM",
-    "SCHEDULE_20",
-    "CUSTOM",
+export enum TemplateType {
+    INTAKE_FORM = "INTAKE_FORM",
+    SCHEDULE_20 = "SCHEDULE_20",
+    CUSTOM = "CUSTOM",
 }
 
-enum ContentType {
-    "PDF" = 'application/pdf',
-    "JSON" = 'application/json',
-    "ZIP" = 'application/zip',
-    "MULTIPART" = 'multipart/form-data'
+export enum ContentType {
+    PDF = "PDF",
+    JSON = "JSON",
+    ZIP = "ZIP",
+    MULTIPART = "MULTIPART",
 }
