@@ -1,7 +1,6 @@
 import {
     NoRpIdException,
     NoStatusException,
-    NoSubmittedAtException,
     NoCreatedAtException,
     NoUpdatedAtException
 } from "../exceptions/application_exceptions.ts";
@@ -17,16 +16,16 @@ export class Application {
     private _applicantId: string;
     private _rpId: string;
     private _status: Status;
-    private _submittedAt: Date;
+    private _submittedAt: Date | null;
     private _createdAt: Date;
     private _updatedAt: Date;
 
-    constructor(
+    private constructor(
         rfcId: string,
         applicantId: string,
         rpId: string,
         status: Status,
-        submittedAt: Date,
+        submittedAt: Date | null,
         createdAt: Date,
         updatedAt: Date,
     ) {
@@ -45,31 +44,28 @@ export class Application {
     get applicantId(): string { return this._applicantId; }
     get rpId(): string { return this._rpId; }
     get status(): Status { return this._status; }
-    get submittedAt(): Date { return this._submittedAt; }
+    get submittedAt(): Date | null { return this._submittedAt; }
     get createdAt(): Date { return this._createdAt; }
     get updatedAt(): Date { return this._updatedAt; }
 
     set status(value: Status) { this._status = value; }
-    set submittedAt(value: Date) { this._submittedAt = value; }
+    set submittedAt(value: Date | null) { this._submittedAt = value; }
     set createdAt(value: Date) { this._createdAt = value; }
     set updatedAt(value: Date) { this._updatedAt = value; }
 
     static create(
-
         rcfId: string,
         applicantId: string,
         rpId: string,
         status: Status,
-        submittedAt: Date,
+        submittedAt: Date | null,
         createdAt: Date,
         updatedAt: Date,
-
     ) {
         if (!rcfId) throw new NoRcfIdException("RCF ID is required", new Error());
         if (!applicantId) throw new NoApplicantIdException("Applicant ID is required", new Error());
         if (!rpId) throw new NoRpIdException("RP ID is required", new Error());
         if (!status) throw new NoStatusException("Status is required", new Error());
-        if (!submittedAt) throw new NoSubmittedAtException("Submitted at is required", new Error());
         if (!createdAt) throw new NoCreatedAtException("Created at is required", new Error());
         if (!updatedAt) throw new NoUpdatedAtException("Updated at is required", new Error());
 
@@ -83,9 +79,37 @@ export class Application {
             updatedAt
         );
     }
+
+    static reconstitute(
+        id: string,
+        rcfId: string,
+        applicantId: string,
+        rpId: string,
+        status: Status,
+        submittedAt: Date | null,
+        createdAt: Date,
+        updatedAt: Date,
+    ) {
+        const application = new Application(
+            rcfId,
+            applicantId,
+            rpId,
+            status,
+            submittedAt,
+            createdAt,
+            updatedAt,
+        );
+
+        application._id = id;
+        application._submittedAt = submittedAt;
+        application._createdAt = createdAt;
+        application.updatedAt = updatedAt;
+
+        return application;
+    }
 }
 
-enum Status {
-    "SUBMITTED",
-    "PENDING"
+export enum Status {
+    SUBMITTED = "SUBMITTED",
+    PENDING = "PENDING",
 }

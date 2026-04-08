@@ -10,7 +10,7 @@ export class Applicant {
     private _createdAt: Date;
     private _updatedAt: Date | null;
 
-    constructor(
+    private constructor(
         rpId: string,
         name: string,
     ) {
@@ -23,11 +23,13 @@ export class Applicant {
     //getters
     get id(): string { return this._id; }
     get rpId(): string { return this._rpId; }
+    get name(): string { return this._name; }
     get createdAt(): Date { return this._createdAt; }
     get updatedAt(): Date | null { return this._updatedAt; }
 
     //setters
     set rpId(rpId: string) { this._rpId = rpId; }
+    set name(name: string) { this._name = name; }
     set updatedAt(time: Date) {
         time = new Date(Date.now());
         this._updatedAt = time;
@@ -42,5 +44,24 @@ export class Applicant {
         if (!name) throw new NoNameException("Name is required", new Error());
 
         return new Applicant(rpId, name);
+    }
+
+    static reconstitute(
+        id: string,
+        rpId: string,
+        name: string,
+        createdAt: Date,
+        updatedAt: Date | null
+    ): Applicant {
+
+        const applicant = new Applicant(
+            rpId,
+            name,
+        )
+        applicant._id = id;
+        applicant._createdAt = createdAt;
+        applicant._updatedAt = updatedAt;
+
+        return applicant;
     }
 }

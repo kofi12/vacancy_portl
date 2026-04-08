@@ -29,3 +29,21 @@ export class NoUpdatedAtException extends DomainError {
         super(message, error);
     }
 }
+
+export class ApplicationNotFoundException extends DomainError {
+    constructor(id: string) {
+        super(`Application with id ${id} not found`);
+    }
+}
+
+export class ApplicationUpdateException extends DomainError {
+    constructor(id: string, cause: unknown) {
+        super(`Failed to update application ${id}`, { cause });
+    }
+}
+
+export class ApplicationDeleteException extends DomainError {
+    constructor(id: string, cause: unknown) {
+        super(`Failed to delete application ${id}`, { cause });
+    }
+}
