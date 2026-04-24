@@ -1,9 +1,4 @@
-import {
-    NoRpIdException,
-    NoStatusException,
-    NoCreatedAtException,
-    NoUpdatedAtException
-} from "../exceptions/application_exceptions.ts";
+import { NoRpIdException } from "../exceptions/application_exceptions.ts";
 import {
     NoRcfIdException,
     NoApplicantIdException
@@ -18,7 +13,7 @@ export class Application {
     private _status: Status;
     private _submittedAt: Date | null;
     private _createdAt: Date;
-    private _updatedAt: Date;
+    private _updatedAt: Date | null;
 
     private constructor(
         rfcId: string,
@@ -27,7 +22,7 @@ export class Application {
         status: Status,
         submittedAt: Date | null,
         createdAt: Date,
-        updatedAt: Date,
+        updatedAt: Date | null,
     ) {
         this._id = crypto.randomUUID();
         this._rcfId = rfcId;
@@ -46,37 +41,30 @@ export class Application {
     get status(): Status { return this._status; }
     get submittedAt(): Date | null { return this._submittedAt; }
     get createdAt(): Date { return this._createdAt; }
-    get updatedAt(): Date { return this._updatedAt; }
+    get updatedAt(): Date | null { return this._updatedAt; }
 
     set status(value: Status) { this._status = value; }
     set submittedAt(value: Date | null) { this._submittedAt = value; }
     set createdAt(value: Date) { this._createdAt = value; }
-    set updatedAt(value: Date) { this._updatedAt = value; }
+    set updatedAt(value: Date | null) { this._updatedAt = value; }
 
     static create(
         rcfId: string,
         applicantId: string,
         rpId: string,
-        status: Status,
-        submittedAt: Date | null,
-        createdAt: Date,
-        updatedAt: Date,
     ) {
         if (!rcfId) throw new NoRcfIdException("RCF ID is required", new Error());
         if (!applicantId) throw new NoApplicantIdException("Applicant ID is required", new Error());
         if (!rpId) throw new NoRpIdException("RP ID is required", new Error());
-        if (!status) throw new NoStatusException("Status is required", new Error());
-        if (!createdAt) throw new NoCreatedAtException("Created at is required", new Error());
-        if (!updatedAt) throw new NoUpdatedAtException("Updated at is required", new Error());
 
         return new Application(
             rcfId,
             applicantId,
             rpId,
-            status,
-            submittedAt,
-            createdAt,
-            updatedAt
+            Status.PENDING,
+            null,
+            new Date(),
+            null,
         );
     }
 
@@ -88,7 +76,7 @@ export class Application {
         status: Status,
         submittedAt: Date | null,
         createdAt: Date,
-        updatedAt: Date,
+        updatedAt: Date | null,
     ) {
         const application = new Application(
             rcfId,
