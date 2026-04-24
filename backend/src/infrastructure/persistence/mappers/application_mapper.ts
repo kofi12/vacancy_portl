@@ -35,7 +35,6 @@ export class ApplicationMapper {
             status: application.status as unknown as PrismaStatus,
             submittedAt: application.submittedAt,
             createdAt: application.createdAt,
-            updatedAt: application.updatedAt,
         };
     }
 }

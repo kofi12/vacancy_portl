@@ -1,6 +1,6 @@
 import { RcfFormMapper } from '../mappers/rcf_form_mapper';
 import { RcfForm } from '../../../domain/entities/rcf_form';
-import type { RcfFormRepo } from '../../../domain/repositories/rcf_forms_repo';
+import type { RcfFormRepo } from '../../../domain/repositories/rcf_form_repo';
 import { prisma } from '../prisma/prisma_client';
 import { RcfFormNotFoundException } from '../../../domain/exceptions/rcf_form_exceptions';
 
