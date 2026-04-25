@@ -24,3 +24,9 @@ export class NoTypeException extends DomainError {
     }
 }
 
+export class ApplicationDocumentNotFoundException extends DomainError {
+    constructor(message: string, cause?: Error) {
+        super(message, cause);
+    }
+}
+
