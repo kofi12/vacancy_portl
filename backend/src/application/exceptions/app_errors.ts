@@ -23,6 +23,11 @@ export enum AppErrorCode {
 
     // 500
     UNEXPECTED_ERROR = "UNEXPECTED_ERROR",
+
+    //AUTH
+    AUTH_INVALID_STATE = "AUTH_INVALID_STATE",
+    AUTH_INVALID_TOKEN = "AUTH_INVALID_TOKEN",
+    AUTH_UNAUTHORIZED = "AUTH+UNAUTHORIZED"
 }
 
 export class ApplicationError extends Error {
