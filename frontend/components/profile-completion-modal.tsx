@@ -15,19 +15,14 @@ import {
 
 export function ProfileCompletionModal() {
   const { user, completeProfile } = useApp()
-  const [name, setName] = useState(user?.name || "")
-  const [org, setOrg] = useState("")
+  const [fullName, setFullName] = useState(user?.fullName || "")
   const [phone, setPhone] = useState("")
 
   const isOpen = !!user && !user.profileCompleted
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    completeProfile({
-      name: name || user?.name,
-      organization: org,
-      phone,
-    })
+    completeProfile({ fullName: fullName || user?.fullName || "", phone })
   }
 
   return (
@@ -45,20 +40,9 @@ export function ProfileCompletionModal() {
             <Input
               id="prof-name"
               className="rounded-xl"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
               placeholder="Your full name"
-              required
-            />
-          </div>
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="prof-org">Organization</Label>
-            <Input
-              id="prof-org"
-              className="rounded-xl"
-              value={org}
-              onChange={(e) => setOrg(e.target.value)}
-              placeholder="e.g., Springfield General Hospital"
               required
             />
           </div>

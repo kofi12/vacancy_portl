@@ -19,7 +19,7 @@ export class RcfService {
             if (existing.some(r => r.name === dto.name))
                 throw new ConflictError(AppErrorCode.RCF_NAME_CONFLICT, `RCF with name "${dto.name}" already exists in this organization`);
 
-            const rcf = Rcf.create(dto.orgId, dto.name, dto.licensedBeds, dto.currentOpenings, dto.isActive);
+            const rcf = Rcf.create(dto.orgId, dto.name, dto.address, dto.phone, dto.licensedBeds, dto.currentOpenings, dto.isActive);
             await this.rcfRepo.create(rcf);
             return this.toResponseDto(rcf);
         } catch (e) {
@@ -74,6 +74,8 @@ export class RcfService {
                     throw new ConflictError(AppErrorCode.RCF_NAME_CONFLICT, `RCF with name "${dto.name}" already exists in this organization`);
                 rcf.name = dto.name;
             }
+            if (dto.address) rcf.address = dto.address;
+            if (dto.phone) rcf.phone = dto.phone;
             if (dto.licensedBeds !== undefined) rcf.licensedBeds = dto.licensedBeds;
             if (dto.currentOpenings !== undefined) rcf.currentOpenings = dto.currentOpenings;
             if (dto.isActive !== undefined) rcf.isActive = dto.isActive;
@@ -104,6 +106,8 @@ export class RcfService {
             id: rcf.id,
             orgId: rcf.orgId,
             name: rcf.name,
+            address: rcf.address,
+            phone: rcf.phone,
             licensedBeds: rcf.licensedBeds,
             currentOpenings: rcf.currentOpenings,
             isActive: rcf.isActive,

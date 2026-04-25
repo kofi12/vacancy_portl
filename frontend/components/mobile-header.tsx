@@ -44,7 +44,7 @@ export function MobileHeader({ activeView, onNavigate, open, onOpenChange }: Mob
     { id: "profile", label: "Profile", icon: UserCircle },
   ]
 
-  const navItems = user?.role === "owner" ? ownerNavItems : rpNavItems
+  const navItems = user?.role === "OWNER" ? ownerNavItems : rpNavItems
 
   function handleNav(view: string) {
     onNavigate(view)
@@ -105,12 +105,12 @@ export function MobileHeader({ activeView, onNavigate, open, onOpenChange }: Mob
           <div className="mt-auto border-t border-border pt-4">
             <div className="mb-3 flex items-center gap-3 px-3">
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-xs font-semibold text-muted-foreground">
-                {user?.name?.charAt(0) || "U"}
+                {user?.fullName?.charAt(0) || "U"}
               </div>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-foreground">{user?.name}</p>
+                <p className="truncate text-sm font-medium text-foreground">{user?.fullName}</p>
                 <p className="truncate text-xs text-muted-foreground capitalize">
-                  {user?.role === "owner" ? "Owner / Operator" : "Referring Professional"}
+                  {user?.role === "OWNER" ? "Owner / Operator" : "Referring Professional"}
                 </p>
               </div>
             </div>

@@ -4,9 +4,8 @@ import { useState } from "react"
 import { useApp, type UserRole } from "@/lib/app-context"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Building2, Mail, Lock, ArrowRight } from "lucide-react"
+import { Building2, Mail } from "lucide-react"
 
 export function LoginScreen() {
   const { login } = useApp()
@@ -26,45 +25,17 @@ export function LoginScreen() {
         <Card className="rounded-2xl shadow-sm">
           <CardHeader className="pb-4">
             <CardTitle className="text-lg">Sign In</CardTitle>
-            <CardDescription>Enter your credentials to access the portal</CardDescription>
+            <CardDescription>Sign in with Google to access the portal</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-5">
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="email">Email Address</Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="you@organization.com"
-                  className="rounded-xl pl-10"
-                  defaultValue="maria.chen@sunrisegardens.com"
-                />
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="password">Password</Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="Enter your password"
-                  className="rounded-xl pl-10"
-                  defaultValue="password123"
-                />
-              </div>
-            </div>
-
             <div className="flex flex-col gap-2">
               <Label className="text-sm font-medium">Sign in as</Label>
               <div className="grid grid-cols-2 gap-3">
                 <button
                   type="button"
-                  onClick={() => setSelectedRole("owner")}
+                  onClick={() => setSelectedRole("OWNER")}
                   className={`flex flex-col items-center gap-2 rounded-xl border-2 p-4 text-center transition-colors ${
-                    selectedRole === "owner"
+                    selectedRole === "OWNER"
                       ? "border-primary bg-primary/5 text-foreground"
                       : "border-border text-muted-foreground hover:border-primary/40"
                   }`}
@@ -75,9 +46,9 @@ export function LoginScreen() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setSelectedRole("rp")}
+                  onClick={() => setSelectedRole("RP")}
                   className={`flex flex-col items-center gap-2 rounded-xl border-2 p-4 text-center transition-colors ${
-                    selectedRole === "rp"
+                    selectedRole === "RP"
                       ? "border-primary bg-primary/5 text-foreground"
                       : "border-border text-muted-foreground hover:border-primary/40"
                   }`}
@@ -90,23 +61,12 @@ export function LoginScreen() {
             </div>
 
             <Button
+              variant="outline"
               className="w-full rounded-xl"
               size="lg"
               disabled={!selectedRole}
               onClick={() => selectedRole && login(selectedRole)}
             >
-              Sign In
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-
-            <div className="relative flex items-center justify-center">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-border" />
-              </div>
-              <span className="relative bg-card px-3 text-xs text-muted-foreground">or</span>
-            </div>
-
-            <Button variant="outline" className="w-full rounded-xl" size="lg" onClick={() => selectedRole && login(selectedRole)}>
               <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
                 <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4" />
                 <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />

@@ -15,7 +15,7 @@ export class ApplicantService {
     async createApplicant(dto: CreateApplicantDto): Promise<ApplicantResponseDto> {
         try {
             await this.userRepo.findById(dto.rpId);
-            const applicant = Applicant.create(dto.rpId, dto.name);
+            const applicant = Applicant.create(dto.rpId, dto.name, dto.age, dto.careNeeds);
             await this.applicantRepo.create(applicant);
             return this.toResponseDto(applicant);
         } catch (e) {
@@ -54,6 +54,8 @@ export class ApplicantService {
             if (applicant.rpId !== requestingRpId)
                 throw new ForbiddenError(AppErrorCode.NOT_APPLICANT_OWNER, "You do not own this applicant");
             if (dto.name) applicant.name = dto.name;
+            if (dto.age !== undefined) applicant.age = dto.age;
+            if (dto.careNeeds) applicant.careNeeds = dto.careNeeds;
             await this.applicantRepo.update(applicant);
             return this.toResponseDto(applicant);
         } catch (e) {
@@ -82,6 +84,8 @@ export class ApplicantService {
             id: applicant.id,
             rpId: applicant.rpId,
             name: applicant.name,
+            age: applicant.age,
+            careNeeds: applicant.careNeeds,
             createdAt: applicant.createdAt.toISOString(),
             updatedAt: applicant.updatedAt?.toISOString() ?? null,
         };

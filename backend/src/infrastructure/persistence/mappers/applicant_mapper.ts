@@ -8,6 +8,8 @@ export class ApplicantMapper {
             id,
             rpId,
             name,
+            age,
+            careNeeds,
             createdAt,
             updatedAt,
         }: ApplicantModel
@@ -16,6 +18,8 @@ export class ApplicantMapper {
             id,
             rpId,
             name,
+            age,
+            careNeeds,
             createdAt,
             updatedAt,
         );
@@ -26,6 +30,8 @@ export class ApplicantMapper {
             id: applicant.id,
             rpId: applicant.rpId,
             name: applicant.name,
+            age: applicant.age,
+            careNeeds: applicant.careNeeds,
             createdAt: applicant.createdAt,
             updatedAt: applicant.updatedAt ?? undefined,
         };

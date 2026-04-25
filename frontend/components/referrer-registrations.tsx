@@ -7,10 +7,10 @@ import { ClipboardList, Clock, CheckCircle2, Building2 } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 
 export function ReferrerRegistrations() {
-  const { user, applications } = useApp()
+  const { user, applications, applicants, facilities } = useApp()
   const myApplications = applications
     .filter((a) => a.rpId === user?.id)
-    .sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime())
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
 
   return (
     <div className="flex flex-col gap-6">
@@ -35,40 +35,50 @@ export function ReferrerRegistrations() {
         </Card>
       ) : (
         <div className="flex flex-col gap-4">
-          {myApplications.map((application) => (
-            <Card key={application.id} className="rounded-2xl shadow-sm">
-              <CardContent className="p-5">
-                <div className="mb-3 flex items-start justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
-                      <Building2 className="h-5 w-5 text-primary" />
+          {myApplications.map((application) => {
+            const facility = facilities.find((f) => f.id === application.rcfId)
+            const applicant = applicants.find((a) => a.id === application.applicantId)
+            return (
+              <Card key={application.id} className="rounded-2xl shadow-sm">
+                <CardContent className="p-5">
+                  <div className="mb-3 flex items-start justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+                        <Building2 className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <h3 className="font-medium text-foreground">
+                          {facility?.name ?? application.rcfId}
+                        </h3>
+                        {applicant && (
+                          <p className="text-sm text-muted-foreground">
+                            {"For "}{applicant.name}{" (age "}{applicant.age}{")"}
+                          </p>
+                        )}
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="font-medium text-foreground">{application.rcfName}</h3>
-                      <p className="text-sm text-muted-foreground">
-                        {"For "}{application.applicantName} {"(age "}{application.applicantAge}{")"}
-                      </p>
-                    </div>
+                    {application.status === "SUBMITTED" ? (
+                      <Badge variant="outline" className="rounded-lg border-success text-success">
+                        <CheckCircle2 className="mr-1 h-3 w-3" />
+                        SUBMITTED
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="rounded-lg">
+                        <Clock className="mr-1 h-3 w-3" />
+                        PENDING
+                      </Badge>
+                    )}
                   </div>
-                  {application.status === "SUBMITTED" ? (
-                    <Badge variant="outline" className="rounded-lg border-success text-success">
-                      <CheckCircle2 className="mr-1 h-3 w-3" />
-                      SUBMITTED
-                    </Badge>
-                  ) : (
-                    <Badge variant="outline" className="rounded-lg">
-                      <Clock className="mr-1 h-3 w-3" />
-                      PENDING
-                    </Badge>
-                  )}
-                </div>
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <Clock className="h-3.5 w-3.5" />
-                  Submitted {formatDistanceToNow(new Date(application.submittedAt), { addSuffix: true })}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <Clock className="h-3.5 w-3.5" />
+                    {application.submittedAt
+                      ? `Submitted ${formatDistanceToNow(new Date(application.submittedAt), { addSuffix: true })}`
+                      : `Created ${formatDistanceToNow(new Date(application.createdAt), { addSuffix: true })}`}
+                  </div>
+                </CardContent>
+              </Card>
+            )
+          })}
         </div>
       )}
     </div>

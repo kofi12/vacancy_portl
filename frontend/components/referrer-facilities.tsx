@@ -25,20 +25,23 @@ import {
   UserPlus,
   CheckCircle2,
   RefreshCw,
+  Plus,
 } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 
 export function ReferrerFacilities() {
-  const { user, facilities, submitApplication } = useApp()
+  const { user, facilities, applicants, submitApplication, createApplicant } = useApp()
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<"all" | "openings" | "no-vacancies">("all")
   const [applyFacility, setApplyFacility] = useState<Facility | null>(null)
-  const [applicantName, setApplicantName] = useState("")
-  const [applicantAge, setApplicantAge] = useState("")
-  const [applicantNeeds, setApplicantNeeds] = useState("")
-  const [contactNotes, setContactNotes] = useState("")
+  const [selectedApplicantId, setSelectedApplicantId] = useState<string | "new">("")
+  const [newName, setNewName] = useState("")
+  const [newAge, setNewAge] = useState("")
+  const [newCareNeeds, setNewCareNeeds] = useState("")
   const [showSuccess, setShowSuccess] = useState(false)
   const [lastRefreshed, setLastRefreshed] = useState(new Date())
+
+  const myApplicants = applicants.filter((a) => a.rpId === user?.id)
 
   const filteredFacilities = facilities.filter((f) => {
     const matchesSearch =
@@ -53,30 +56,29 @@ export function ReferrerFacilities() {
 
   function openApplyModal(facility: Facility) {
     setApplyFacility(facility)
-    setApplicantName("")
-    setApplicantAge("")
-    setApplicantNeeds("")
-    setContactNotes("")
+    setSelectedApplicantId(myApplicants.length > 0 ? myApplicants[0].id : "new")
+    setNewName("")
+    setNewAge("")
+    setNewCareNeeds("")
   }
 
   function handleApply() {
-    if (!applyFacility || !user) return
-    submitApplication({
-      rcfId: applyFacility.id,
-      rcfName: applyFacility.name,
-      rpId: user.id,
-      rpName: user.name,
-      rpEmail: user.email,
-      rpPhone: user.phone || "",
-      applicantName,
-      applicantAge,
-      applicantNeeds,
-      contactNotes,
-    })
+    if (!applyFacility) return
+
+    let applicantId = selectedApplicantId
+    if (selectedApplicantId === "new") {
+      const created = createApplicant(newName, parseInt(newAge), newCareNeeds)
+      applicantId = created.id
+    }
+
+    submitApplication(applyFacility.id, applicantId)
     setApplyFacility(null)
     setShowSuccess(true)
     setTimeout(() => setShowSuccess(false), 3000)
   }
+
+  const isNewApplicantValid = newName.trim() && parseInt(newAge) > 0 && newCareNeeds.trim()
+  const canSubmit = selectedApplicantId !== "new" || isNewApplicantValid
 
   const openCount = facilities.filter((f) => f.isActive && f.currentOpenings > 0).length
 
@@ -104,7 +106,7 @@ export function ReferrerFacilities() {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Search by name or location..."
+            placeholder="Search by name or address..."
             className="rounded-xl pl-10"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -144,7 +146,7 @@ export function ReferrerFacilities() {
                   </div>
                   <div>
                     <h3 className="font-medium text-foreground">{facility.name}</h3>
-                    <p className="text-sm text-muted-foreground">{facility.ownerName}</p>
+                    <p className="text-xs text-muted-foreground">{facility.licensedBeds} licensed beds</p>
                   </div>
                 </div>
                 <Badge
@@ -171,16 +173,12 @@ export function ReferrerFacilities() {
                 </div>
               </div>
 
-              {facility.notes && (
-                <p className="mb-3 rounded-xl bg-secondary/50 p-3 text-sm text-foreground">
-                  {facility.notes}
-                </p>
-              )}
-
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                   <Clock className="h-3.5 w-3.5" />
-                  Updated {formatDistanceToNow(new Date(facility.lastUpdated), { addSuffix: true })}
+                  {facility.updatedAt
+                    ? `Updated ${formatDistanceToNow(new Date(facility.updatedAt), { addSuffix: true })}`
+                    : "Never updated"}
                 </div>
                 <Button
                   size="sm"
@@ -211,71 +209,86 @@ export function ReferrerFacilities() {
           <DialogHeader>
             <DialogTitle>Submit Application</DialogTitle>
             <DialogDescription>
-              {"Submit an application for an applicant to "}{applyFacility?.name}{"."}
-              {applyFacility && applyFacility.currentOpenings === 0 && (
-                <span className="mt-1 block">{"This RCF has no current openings — your application will be reviewed when a vacancy becomes available."}</span>
-              )}
+              {"Submit an application to "}{applyFacility?.name}{"."}
             </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col gap-4">
             <div className="flex flex-col gap-2">
-              <Label htmlFor="app-name">Applicant Name</Label>
-              <Input
-                id="app-name"
-                className="rounded-xl"
-                placeholder="Full name of the prospective resident"
-                value={applicantName}
-                onChange={(e) => setApplicantName(e.target.value)}
-                required
-              />
+              <Label>Applicant</Label>
+              <div className="flex flex-col gap-2">
+                {myApplicants.map((a) => (
+                  <button
+                    key={a.id}
+                    type="button"
+                    onClick={() => setSelectedApplicantId(a.id)}
+                    className={`flex flex-col rounded-xl border-2 p-3 text-left text-sm transition-colors ${
+                      selectedApplicantId === a.id
+                        ? "border-primary bg-primary/5"
+                        : "border-border hover:border-primary/40"
+                    }`}
+                  >
+                    <span className="font-medium text-foreground">{a.name}</span>
+                    <span className="text-xs text-muted-foreground">Age {a.age} — {a.careNeeds}</span>
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => setSelectedApplicantId("new")}
+                  className={`flex items-center gap-2 rounded-xl border-2 p-3 text-sm transition-colors ${
+                    selectedApplicantId === "new"
+                      ? "border-primary bg-primary/5 text-foreground"
+                      : "border-border text-muted-foreground hover:border-primary/40"
+                  }`}
+                >
+                  <Plus className="h-4 w-4" />
+                  New applicant
+                </button>
+              </div>
             </div>
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="app-age">Applicant Age</Label>
-              <Input
-                id="app-age"
-                className="rounded-xl"
-                type="number"
-                placeholder="Age"
-                value={applicantAge}
-                onChange={(e) => setApplicantAge(e.target.value)}
-                required
-              />
-            </div>
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="app-needs">Care Needs</Label>
-              <Textarea
-                id="app-needs"
-                className="rounded-xl"
-                rows={2}
-                placeholder="Describe any specific care needs or requirements..."
-                value={applicantNeeds}
-                onChange={(e) => setApplicantNeeds(e.target.value)}
-                required
-              />
-            </div>
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="app-notes">Contact Preferences (optional)</Label>
-              <Input
-                id="app-notes"
-                className="rounded-xl"
-                placeholder="e.g., Best reached mornings, prefer email"
-                value={contactNotes}
-                onChange={(e) => setContactNotes(e.target.value)}
-              />
-            </div>
-            <div className="rounded-xl bg-secondary/50 p-3 text-xs text-muted-foreground">
-              {"Your contact information ("}{user?.email}{", "}{user?.phone}{") will be shared with the RCF owner."}
-            </div>
+
+            {selectedApplicantId === "new" && (
+              <>
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="new-name">Full Name</Label>
+                  <Input
+                    id="new-name"
+                    className="rounded-xl"
+                    placeholder="Full name of the prospective resident"
+                    value={newName}
+                    onChange={(e) => setNewName(e.target.value)}
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="new-age">Age</Label>
+                  <Input
+                    id="new-age"
+                    type="number"
+                    min="1"
+                    className="rounded-xl"
+                    placeholder="Age"
+                    value={newAge}
+                    onChange={(e) => setNewAge(e.target.value)}
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="new-needs">Care Needs</Label>
+                  <Textarea
+                    id="new-needs"
+                    className="rounded-xl"
+                    rows={2}
+                    placeholder="Describe any specific care needs or requirements..."
+                    value={newCareNeeds}
+                    onChange={(e) => setNewCareNeeds(e.target.value)}
+                  />
+                </div>
+              </>
+            )}
           </div>
           <DialogFooter className="gap-2 sm:gap-0">
             <Button variant="outline" className="rounded-xl" onClick={() => setApplyFacility(null)}>
               Cancel
             </Button>
-            <Button
-              className="rounded-xl"
-              onClick={handleApply}
-              disabled={!applicantName || !applicantAge || !applicantNeeds}
-            >
+            <Button className="rounded-xl" onClick={handleApply} disabled={!canSubmit}>
               Submit Application
             </Button>
           </DialogFooter>

@@ -24,6 +24,18 @@ export class IncorrectOpeningsException extends DomainError {
     }
 }
 
+export class NoAddressException extends DomainError {
+    constructor(message: string, e: Error) {
+        super(message, e);
+    }
+}
+
+export class NoPhoneException extends DomainError {
+    constructor(message: string, e: Error) {
+        super(message, e);
+    }
+}
+
 export class RcfNotFoundException extends DomainError {
     constructor(identifier: string) {
         super(`RCF not found: ${identifier}`);

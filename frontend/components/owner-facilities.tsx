@@ -7,7 +7,6 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import {
   Dialog,
   DialogContent,
@@ -20,20 +19,18 @@ import { Building2, Edit, Clock, CheckCircle2 } from "lucide-react"
 import { formatDistanceToNow, format } from "date-fns"
 
 export function OwnerFacilities() {
-  const { user, facilities, updateFacilityStatus } = useApp()
+  const { userOrgId, facilities, updateFacilityStatus } = useApp()
   const [editingFacility, setEditingFacility] = useState<Facility | null>(null)
   const [editIsActive, setEditIsActive] = useState(true)
   const [editOpenings, setEditOpenings] = useState("0")
-  const [editNotes, setEditNotes] = useState("")
   const [showSuccess, setShowSuccess] = useState(false)
 
-  const myFacilities = facilities.filter((f) => f.ownerId === user?.id)
+  const myFacilities = facilities.filter((f) => f.orgId === userOrgId)
 
   function openEditModal(facility: Facility) {
     setEditingFacility(facility)
     setEditIsActive(facility.isActive)
     setEditOpenings(String(facility.currentOpenings))
-    setEditNotes(facility.notes)
   }
 
   function handleSave() {
@@ -42,7 +39,6 @@ export function OwnerFacilities() {
       editingFacility.id,
       editIsActive,
       parseInt(editOpenings) || 0,
-      editNotes
     )
     setEditingFacility(null)
     setShowSuccess(true)
@@ -67,10 +63,7 @@ export function OwnerFacilities() {
                   <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
                     <Building2 className="h-5 w-5 text-primary" />
                   </div>
-                  <div>
-                    <CardTitle className="text-base">{facility.name}</CardTitle>
-                    <p className="text-sm text-muted-foreground">{facility.address}</p>
-                  </div>
+                  <CardTitle className="text-base">{facility.name}</CardTitle>
                 </div>
                 <Badge
                   className={
@@ -88,7 +81,7 @@ export function OwnerFacilities() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="mb-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
+              <div className="mb-4 grid grid-cols-2 gap-4">
                 <div className="rounded-xl bg-secondary/50 p-3">
                   <p className="text-xs text-muted-foreground">Licensed Beds</p>
                   <p className="text-lg font-semibold text-foreground">{facility.licensedBeds}</p>
@@ -97,18 +90,20 @@ export function OwnerFacilities() {
                   <p className="text-xs text-muted-foreground">Current Openings</p>
                   <p className="text-lg font-semibold text-success">{facility.currentOpenings}</p>
                 </div>
-                <div className="col-span-2 rounded-xl bg-secondary/50 p-3">
-                  <p className="text-xs text-muted-foreground">Notes</p>
-                  <p className="text-sm text-foreground">{facility.notes}</p>
-                </div>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <Clock className="h-3.5 w-3.5" />
-                  Last updated {formatDistanceToNow(new Date(facility.lastUpdated), { addSuffix: true })}
-                  <span className="text-muted-foreground/50">
-                    ({format(new Date(facility.lastUpdated), "MMM d, yyyy h:mm a")})
-                  </span>
+                  {facility.updatedAt ? (
+                    <>
+                      Last updated {formatDistanceToNow(new Date(facility.updatedAt), { addSuffix: true })}
+                      <span className="text-muted-foreground/50">
+                        ({format(new Date(facility.updatedAt), "MMM d, yyyy h:mm a")})
+                      </span>
+                    </>
+                  ) : (
+                    "Never updated"
+                  )}
                 </div>
                 <Button
                   variant="outline"
@@ -178,29 +173,13 @@ export function OwnerFacilities() {
                 />
               </div>
             )}
-
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="edit-notes">Notes (optional)</Label>
-              <Textarea
-                id="edit-notes"
-                className="rounded-xl"
-                rows={3}
-                value={editNotes}
-                onChange={(e) => setEditNotes(e.target.value)}
-                placeholder="Any additional details about availability..."
-              />
-            </div>
-
-            <div className="rounded-xl bg-primary/5 p-3 text-sm text-primary">
-              {"Saving will timestamp the change and notify all referring professionals with pending applications."}
-            </div>
           </div>
           <DialogFooter className="gap-2 sm:gap-0">
             <Button variant="outline" className="rounded-xl" onClick={() => setEditingFacility(null)}>
               Cancel
             </Button>
             <Button className="rounded-xl" onClick={handleSave}>
-              Save & Notify
+              Save
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -215,7 +194,7 @@ export function OwnerFacilities() {
             </div>
             <DialogTitle>Status Updated</DialogTitle>
             <DialogDescription>
-              {"Vacancy status saved. Referring professionals with pending applications have been notified."}
+              {"Vacancy status has been saved."}
             </DialogDescription>
           </div>
         </DialogContent>

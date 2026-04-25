@@ -79,8 +79,8 @@ const service = new ApplicationService(
     mockUserRepo,
 );
 
-const makeActiveRcf = () => Rcf.create('org-1', 'Sunrise RCF', 10, 5, true);
-const makeInactiveRcf = () => Rcf.create('org-1', 'Closed RCF', 10, 0, false);
+const makeActiveRcf = () => Rcf.create('org-1', 'Sunrise RCF', '123 Main St', '(555) 000-0000', 10, 5, true);
+const makeInactiveRcf = () => Rcf.create('org-1', 'Closed RCF', '456 Elm St', '(555) 111-1111', 10, 0, false);
 
 beforeEach(() => {
     vi.clearAllMocks();
@@ -89,7 +89,7 @@ beforeEach(() => {
 describe('ApplicationService', () => {
     describe('createApplication', () => {
         it('creates and returns an application DTO', async () => {
-            const applicant = Applicant.create('rp-1', 'John Doe');
+            const applicant = Applicant.create('rp-1', 'John Doe', 72, 'General assisted living');
             const rcf = makeActiveRcf();
             vi.mocked(mockApplicantRepo.findById).mockResolvedValue(applicant);
             vi.mocked(mockRcfRepo.findById).mockResolvedValue(rcf);
@@ -122,7 +122,7 @@ describe('ApplicationService', () => {
         });
 
         it('throws BusinessRuleError when RCF is inactive', async () => {
-            const applicant = Applicant.create('rp-1', 'John Doe');
+            const applicant = Applicant.create('rp-1', 'John Doe', 72, 'General assisted living');
             const rcf = makeInactiveRcf();
             vi.mocked(mockApplicantRepo.findById).mockResolvedValue(applicant);
             vi.mocked(mockRcfRepo.findById).mockResolvedValue(rcf);

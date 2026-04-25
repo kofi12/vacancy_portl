@@ -1,6 +1,8 @@
 import {
     NoOrgException,
     NoNameException,
+    NoAddressException,
+    NoPhoneException,
     NoLicensedBedsException,
     IncorrectOpeningsException
 } from '../exceptions/rcf_exceptions';
@@ -10,6 +12,8 @@ export class Rcf {
     private _id: string;
     private _orgId: string;
     private _name: string;
+    private _address: string;
+    private _phone: string;
     private _licensedBeds: number;
     private _currentOpenings: number;
     private _isActive: boolean;
@@ -19,6 +23,8 @@ export class Rcf {
     private constructor(
         orgId: string,
         name: string,
+        address: string,
+        phone: string,
         licensedBeds: number,
         currentOpenings: number,
         isActive: boolean,
@@ -26,6 +32,8 @@ export class Rcf {
         this._id = crypto.randomUUID();
         this._orgId = orgId;
         this._name = name;
+        this._address = address;
+        this._phone = phone;
         this._licensedBeds = licensedBeds;
         this._currentOpenings = currentOpenings;
         this._isActive = isActive;
@@ -35,6 +43,8 @@ export class Rcf {
     get id(): string { return this._id; }
     get orgId(): string { return this._orgId; }
     get name(): string { return this._name; }
+    get address(): string { return this._address; }
+    get phone(): string { return this._phone; }
     get licensedBeds(): number { return this._licensedBeds; }
     get currentOpenings(): number { return this._currentOpenings; }
     get isActive(): boolean { return this._isActive; }
@@ -42,6 +52,8 @@ export class Rcf {
     get updatedAt(): Date | null { return this._updatedAt; }
 
     set name(value: string) { this._name = value; }
+    set address(value: string) { this._address = value; }
+    set phone(value: string) { this._phone = value; }
     set licensedBeds(value: number) { this._licensedBeds = value; }
     set currentOpenings(value: number) { this._currentOpenings = value; }
     set isActive(value: boolean) { this._isActive = value; }
@@ -51,12 +63,16 @@ export class Rcf {
     static create(
         orgId: string,
         name: string,
+        address: string,
+        phone: string,
         licensedBeds: number,
         currentOpenings: number,
         isActive: boolean,
     ): Rcf {
         if (!orgId) { throw new NoOrgException("Organization missing", new Error()) }
         if (!name) { throw new NoNameException("RCF doesn't have a name", new Error()) }
+        if (!address) { throw new NoAddressException("RCF doesn't have an address", new Error()) }
+        if (!phone) { throw new NoPhoneException("RCF doesn't have a phone number", new Error()) }
         if (licensedBeds <= 0) { throw new NoLicensedBedsException("RCF has no licensed beds", new Error()) }
         if ((currentOpenings > licensedBeds) || (currentOpenings < 0)) {
             throw new IncorrectOpeningsException
@@ -67,6 +83,8 @@ export class Rcf {
         return new Rcf(
             orgId,
             name,
+            address,
+            phone,
             licensedBeds,
             currentOpenings,
             isActive,
@@ -77,6 +95,8 @@ export class Rcf {
         id: string,
         orgId: string,
         name: string,
+        address: string,
+        phone: string,
         licensedBeds: number,
         currentOpenings: number,
         isActive: boolean,
@@ -86,6 +106,8 @@ export class Rcf {
         const rcf = new Rcf(
             orgId,
             name,
+            address,
+            phone,
             licensedBeds,
             currentOpenings,
             isActive,

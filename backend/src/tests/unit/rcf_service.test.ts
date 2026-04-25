@@ -28,7 +28,7 @@ const mockOrgRepo = {
 const service = new RcfService(mockRcfRepo, mockOrgRepo);
 
 const makeRcf = (orgId = 'org-1', name = 'Sunrise RCF') =>
-    Rcf.create(orgId, name, 10, 5, true);
+    Rcf.create(orgId, name, '123 Main St', '(555) 000-0000', 10, 5, true);
 
 beforeEach(() => {
     vi.clearAllMocks();
@@ -44,6 +44,8 @@ describe('RcfService', () => {
             const result = await service.createRcf({
                 orgId: 'org-1',
                 name: 'Sunrise RCF',
+                address: '123 Main St',
+                phone: '(555) 000-0000',
                 licensedBeds: 10,
                 currentOpenings: 5,
                 isActive: true,
@@ -58,7 +60,7 @@ describe('RcfService', () => {
             vi.mocked(mockOrgRepo.findById).mockRejectedValue(new OrganizationNotFoundException('org-1'));
 
             await expect(service.createRcf({
-                orgId: 'org-1', name: 'RCF', licensedBeds: 10, currentOpenings: 5, isActive: true,
+                orgId: 'org-1', name: 'RCF', address: '123 Main St', phone: '(555) 000-0000', licensedBeds: 10, currentOpenings: 5, isActive: true,
             })).rejects.toBeInstanceOf(NotFoundError);
         });
 
@@ -68,7 +70,7 @@ describe('RcfService', () => {
             vi.mocked(mockRcfRepo.findAllByOrgId).mockResolvedValue([existing]);
 
             await expect(service.createRcf({
-                orgId: 'org-1', name: 'Sunrise RCF', licensedBeds: 10, currentOpenings: 5, isActive: true,
+                orgId: 'org-1', name: 'Sunrise RCF', address: '123 Main St', phone: '(555) 000-0000', licensedBeds: 10, currentOpenings: 5, isActive: true,
             })).rejects.toBeInstanceOf(ConflictError);
         });
     });

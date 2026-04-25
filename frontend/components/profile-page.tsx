@@ -3,7 +3,7 @@
 import { useApp } from "@/lib/app-context"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { UserCircle, Mail, Phone, Building2, Shield } from "lucide-react"
+import { UserCircle, Mail, Phone, Shield } from "lucide-react"
 
 export function ProfilePage() {
   const { user } = useApp()
@@ -13,11 +13,10 @@ export function ProfilePage() {
   const fields = [
     { icon: Mail, label: "Email", value: user.email },
     { icon: Phone, label: "Phone", value: user.phone || "Not set" },
-    { icon: Building2, label: "Organization", value: user.organization || "Not set" },
     {
       icon: Shield,
       label: "Role",
-      value: user.role === "owner" ? "Owner / Operator" : "Referring Professional",
+      value: user.role === "OWNER" ? "Owner / Operator" : "Referring Professional",
     },
   ]
 
@@ -35,9 +34,9 @@ export function ProfilePage() {
               <UserCircle className="h-8 w-8 text-primary" />
             </div>
             <div>
-              <CardTitle className="text-xl">{user.name}</CardTitle>
+              <CardTitle className="text-xl">{user.fullName}</CardTitle>
               <Badge variant="outline" className="mt-1 rounded-lg capitalize">
-                {user.role === "owner" ? "Owner / Operator" : "Referring Professional"}
+                {user.role === "OWNER" ? "Owner / Operator" : "Referring Professional"}
               </Badge>
             </div>
           </div>

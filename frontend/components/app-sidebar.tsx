@@ -33,7 +33,7 @@ export function AppSidebar({ activeView, onNavigate }: AppSidebarProps) {
     { id: "profile", label: "Profile", icon: UserCircle },
   ]
 
-  const navItems = user?.role === "owner" ? ownerNavItems : rpNavItems
+  const navItems = user?.role === "OWNER" ? ownerNavItems : rpNavItems
 
   return (
     <aside className="flex h-full w-64 flex-col rounded-2xl bg-card p-4 shadow-sm">
@@ -73,11 +73,11 @@ export function AppSidebar({ activeView, onNavigate }: AppSidebarProps) {
       <div className="mt-auto border-t border-border pt-4">
         <div className="mb-3 flex items-center gap-3 px-3">
           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-xs font-semibold text-muted-foreground">
-            {user?.name?.charAt(0) || "U"}
+            {user?.fullName?.charAt(0) || "U"}
           </div>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium text-foreground">{user?.name}</p>
-            <p className="truncate text-xs text-muted-foreground capitalize">{user?.role === "owner" ? "Owner / Operator" : "Referring Professional"}</p>
+            <p className="truncate text-sm font-medium text-foreground">{user?.fullName}</p>
+            <p className="truncate text-xs text-muted-foreground capitalize">{user?.role === "OWNER" ? "Owner / Operator" : "Referring Professional"}</p>
           </div>
         </div>
         <button

@@ -42,6 +42,8 @@ model Rcf {
   org             Organization  @relation(fields: [orgId], references: [id])
   orgId           String
   name            String
+  address         String
+  phone           String
   licensedBeds    Int
   currentOpenings Int
   isActive        Boolean
@@ -63,10 +65,12 @@ model RcfForm {
 }
 
 model Applicant {
-  id          String        @id
-  rp          User          @relation(fields: [rpId], references: [id])
-  rpId        String
-  name        String
+  id           String        @id
+  rp           User          @relation(fields: [rpId], references: [id])
+  rpId         String
+  name         String
+  age          Int
+  careNeeds    String
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   applications Application[]

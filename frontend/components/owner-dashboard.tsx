@@ -11,9 +11,9 @@ interface OwnerDashboardProps {
 }
 
 export function OwnerDashboard({ onNavigate }: OwnerDashboardProps) {
-  const { user, facilities, applications } = useApp()
+  const { user, userOrgId, facilities, applications } = useApp()
 
-  const myFacilities = facilities.filter((f) => f.ownerId === user?.id)
+  const myFacilities = facilities.filter((f) => f.orgId === userOrgId)
   const myApplications = applications.filter((a) =>
     myFacilities.some((f) => f.id === a.rcfId)
   )
@@ -25,7 +25,7 @@ export function OwnerDashboard({ onNavigate }: OwnerDashboardProps) {
     <div className="flex flex-col gap-6">
       <div>
         <h2 className="text-2xl font-semibold text-foreground">
-          {"Welcome back, "}{user?.name?.split(" ")[0]}
+          {"Welcome back, "}{user?.fullName?.split(" ")[0]}
         </h2>
         <p className="mt-1 text-sm text-muted-foreground">
           {"Here's an overview of your RCFs and pending applications."}
@@ -103,10 +103,11 @@ export function OwnerDashboard({ onNavigate }: OwnerDashboardProps) {
               >
                 <div className="min-w-0 flex-1">
                   <p className="font-medium text-foreground">{facility.name}</p>
-                  <p className="text-sm text-muted-foreground">{facility.address}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    Updated {formatDistanceToNow(new Date(facility.lastUpdated), { addSuffix: true })}
-                  </p>
+                  {facility.updatedAt && (
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Updated {formatDistanceToNow(new Date(facility.updatedAt), { addSuffix: true })}
+                    </p>
+                  )}
                 </div>
                 <Badge
                   className={
@@ -146,12 +147,11 @@ export function OwnerDashboard({ onNavigate }: OwnerDashboardProps) {
                   className="flex items-center justify-between rounded-xl border border-border bg-secondary/30 p-4"
                 >
                   <div className="min-w-0 flex-1">
-                    <p className="font-medium text-foreground">{application.applicantName}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {"Submitted by "}{application.rpName}
-                    </p>
+                    <p className="font-medium text-foreground">Applicant {application.applicantId}</p>
                     <p className="mt-1 text-xs text-muted-foreground">
-                      {formatDistanceToNow(new Date(application.submittedAt), { addSuffix: true })}
+                      {application.submittedAt
+                        ? formatDistanceToNow(new Date(application.submittedAt), { addSuffix: true })
+                        : formatDistanceToNow(new Date(application.createdAt), { addSuffix: true })}
                     </p>
                   </div>
                   {application.status === "SUBMITTED" ? (

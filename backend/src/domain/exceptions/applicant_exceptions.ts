@@ -12,6 +12,18 @@ export class NoNameException extends DomainError {
     }
 }
 
+export class NoAgeException extends DomainError {
+    constructor(message: string, error: Error) {
+        super(message, error);
+    }
+}
+
+export class NoCareNeedsException extends DomainError {
+    constructor(message: string, error: Error) {
+        super(message, error);
+    }
+}
+
 export class ApplicantNotFoundException extends DomainError {
     constructor(message: string, error?: Error) {
         super(message, error);
