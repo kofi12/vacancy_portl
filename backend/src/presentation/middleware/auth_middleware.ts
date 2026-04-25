@@ -2,7 +2,7 @@ import { createMiddleware } from 'hono/factory';
 import type { User } from '../../domain/entities/user.ts';
 import { authAdapter, userRepo } from '../../infrastructure/composition_root.ts';
 
-type AuthEnv = {
+export type AuthEnv = {
     Variables: {
         user: User;
     };
