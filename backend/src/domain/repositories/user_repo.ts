@@ -3,4 +3,5 @@ import { User } from "../entities/user.ts";
 
 export interface UserRepo extends BaseRepo<User> {
     findByEmail(email: string): Promise<User>;
+    findByAuthSubject(authSubject: string): Promise<User | null>;
 }
