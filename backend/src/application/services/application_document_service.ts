@@ -4,6 +4,7 @@ import { ApplicationDocument } from "../../domain/entities/application_document.
 import type { UploadDocumentDto, ApplicationDocumentResponseDto } from "../dtos/application_document_dtos.ts";
 import { ApplicationError, AppErrorCode, NotFoundError, UnexpectedError } from "../exceptions/app_errors.ts";
 import { ApplicationNotFoundException } from "../../domain/exceptions/application_exceptions.ts";
+import { ApplicationDocumentNotFoundException } from "../../domain/exceptions/application_document_exception.ts";
 
 export class ApplicationDocumentService {
     constructor(
@@ -29,6 +30,7 @@ export class ApplicationDocumentService {
             const doc = await this.applicationDocumentRepo.findById(id);
             return this.toResponseDto(doc);
         } catch (e) {
+            if (e instanceof ApplicationDocumentNotFoundException) throw new NotFoundError(AppErrorCode.APPLICATION_DOCUMENT_NOT_FOUND, `Document ${id} not found`, e);
             if (e instanceof ApplicationError) throw e;
             throw new UnexpectedError(AppErrorCode.UNEXPECTED_ERROR, "Unexpected error", e);
         }
@@ -52,6 +54,7 @@ export class ApplicationDocumentService {
             await this.applicationDocumentRepo.delete(id);
             return this.toResponseDto(doc);
         } catch (e) {
+            if (e instanceof ApplicationDocumentNotFoundException) throw new NotFoundError(AppErrorCode.APPLICATION_DOCUMENT_NOT_FOUND, `Document ${id} not found`, e);
             if (e instanceof ApplicationError) throw e;
             throw new UnexpectedError(AppErrorCode.UNEXPECTED_ERROR, "Unexpected error", e);
         }

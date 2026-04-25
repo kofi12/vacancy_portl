@@ -6,7 +6,9 @@ import { ApplicationInfrastructure } from "./persistence/repositories/applicatio
 import { RcfFormInfrastucture } from "./persistence/repositories/rcf_form_infra.ts";
 import { ApplicationDocumentInfrastructure } from "./persistence/repositories/application_document_infra.ts";
 import { GcsStorageAdapter } from "./storage/gcs_storage_adapter.ts";
+import { GoogleOauthAdapter } from "./auth/google_oauth_adapter.ts";
 import { UserService } from "../application/services/user_service.ts";
+import { AuthService } from "../application/services/auth_service.ts";
 import { OrgService } from "../application/services/org_service.ts";
 import { RcfService } from "../application/services/rcf_service.ts";
 import { ApplicantService } from "../application/services/applicant_service.ts";
@@ -15,7 +17,7 @@ import { RcfFormService } from "../application/services/rcf_form_service.ts";
 import { ApplicationDocumentService } from "../application/services/application_document_service.ts";
 
 // Repos
-const userRepo = new UserInfrastructure();
+export const userRepo = new UserInfrastructure();
 const orgRepo = new OrganizationInfrastructure();
 const rcfRepo = new RcfInfrastructure();
 const applicantRepo = new ApplicantInfrastructure();
@@ -25,6 +27,10 @@ const applicationDocumentRepo = new ApplicationDocumentInfrastructure();
 
 // Storage
 export const storageAdapter = new GcsStorageAdapter(process.env.BUCKET_NAME!);
+
+// Auth
+export const authAdapter = new GoogleOauthAdapter();
+export const authService = new AuthService(userRepo, authAdapter);
 
 // Services
 export const userService = new UserService(userRepo);
