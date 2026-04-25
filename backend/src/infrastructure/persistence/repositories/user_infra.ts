@@ -50,4 +50,9 @@ export class UserInfrastructure implements UserRepo {
         }
     }
 
+    async findByAuthSubject(authSubject: string): Promise<User | null> {
+        const user = await prisma.user.findFirst({ where: { authSubject } });
+        return user ? UserMapper.toDomain(user) : null;
+    }
+
 }
