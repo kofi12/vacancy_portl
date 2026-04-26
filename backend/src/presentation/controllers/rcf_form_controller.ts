@@ -64,6 +64,19 @@ rcfFormController.get('/:id', async (c) => {
     }
 });
 
+// GET /:id/download — get signed download URL for an RCF form
+rcfFormController.get('/:id/download', async (c) => {
+    const id = c.req.param('id');
+
+    try {
+        const url = await rcfFormService.getDownloadUrl(id);
+        return c.json({ url });
+    } catch (e) {
+        if (e instanceof NotFoundError) return c.json({ code: e.code, message: e.message }, 404);
+        return c.json({ message: 'Internal server error' }, 500);
+    }
+});
+
 // DELETE /:id — delete an RCF form
 rcfFormController.delete('/:id', async (c) => {
     const id = c.req.param('id');

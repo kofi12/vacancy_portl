@@ -21,6 +21,11 @@ export class RcfInfrastructure implements RcfRepo {
         return prismaRcfs.map((r) => RcfMapper.toDomain(r));
     }
 
+    async findAllActive(): Promise<Rcf[]> {
+        const prismaRcfs = await prisma.rcf.findMany({ where: { isActive: true } });
+        return prismaRcfs.map((r) => RcfMapper.toDomain(r));
+    }
+
     async create(entity: Rcf): Promise<Rcf> {
         const prismaRcf = RcfMapper.toPrisma(entity);
         await prisma.rcf.create({ data: prismaRcf })

@@ -16,11 +16,12 @@ export class AuthService {
         private readonly authPort: AuthPort,
     ) {}
 
-    async initiateGoogleLogin(role: string): Promise<{ url: string; nonce: string; encodedState: string; codeVerifier: string }> {
+    async initiateGoogleLogin(role: string): Promise<{ url: string; nonce: string; codeVerifier: string }> {
         try {
-            const { url, state, codeVerifier } = await this.authPort.getGoogleAuthUrl();
-            const encodedState = Buffer.from(JSON.stringify({ nonce: state, role })).toString('base64');
-            return { url, nonce: state, encodedState, codeVerifier };
+            const nonce = crypto.randomUUID();
+            const encodedState = Buffer.from(JSON.stringify({ nonce, role })).toString('base64');
+            const { url, codeVerifier } = await this.authPort.getGoogleAuthUrl(encodedState);
+            return { url, nonce, codeVerifier };
         } catch (e) {
             if (e instanceof ApplicationError) throw e;
             throw new UnexpectedError(AppErrorCode.UNEXPECTED_ERROR, 'Unexpected error', e);

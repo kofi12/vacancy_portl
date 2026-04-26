@@ -6,10 +6,10 @@ export const authController = new Hono();
 
 authController.get('/google', async (c) => {
     const role = c.req.query('role') ?? 'RP';
-    const { url, nonce, encodedState, codeVerifier } = await authService.initiateGoogleLogin(role);
+    const { url, nonce, codeVerifier } = await authService.initiateGoogleLogin(role);
     setCookie(c, 'oauth_nonce', nonce, { httpOnly: true, sameSite: 'Lax', maxAge: 600 });
     setCookie(c, 'code_verifier', codeVerifier, { httpOnly: true, sameSite: 'Lax', maxAge: 600 });
-    return c.redirect(`${url}&state=${encodeURIComponent(encodedState)}`);
+    return c.redirect(url);
 });
 
 authController.get('/google/callback', async (c) => {
@@ -24,5 +24,6 @@ authController.get('/google/callback', async (c) => {
         encodedState,
         storedNonce as string,
     );
-    return c.json(result);
+    const frontendUrl = process.env.FRONTEND_URL ?? 'http://localhost:3000';
+    return c.redirect(`${frontendUrl}/auth/callback?token=${result.token}`);
 });

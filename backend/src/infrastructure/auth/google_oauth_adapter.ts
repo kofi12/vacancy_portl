@@ -11,11 +11,10 @@ export class GoogleOauthAdapter implements AuthPort {
 
     private google = new arctic.Google(this.clientId, this.clientSecret, this.redirectUri)
 
-    async getGoogleAuthUrl(): Promise<{ url: string; state: string; codeVerifier: string }> {
-        const state = arctic.generateState();
+    async getGoogleAuthUrl(state: string): Promise<{ url: string; codeVerifier: string }> {
         const codeVerifier = arctic.generateCodeVerifier();
         const url = this.google.createAuthorizationURL(state, codeVerifier, ['openid', 'profile', 'email']);
-        return { url: url.toString(), state, codeVerifier };
+        return { url: url.toString(), codeVerifier };
     }
     async exchangeCodeForGoogleUser(code: string, codeVerifier: string): Promise<{ googleId: string; email: string; name: string; }> {
         try {

@@ -4,11 +4,14 @@ import { Storage } from '@google-cloud/storage';
 
 export class GcsStorageAdapter implements StoragePort {
 
-    private storage = new Storage();
+    private storage: Storage;
     private bucketName: string;
 
     constructor(bucketName: string) {
         this.bucketName = bucketName;
+        this.storage = new Storage({
+            keyFilename: process.env.GOOGLE_APPLICATION_CREDENTIALS,
+        });
     }
 
     async upload(key: string, data: Buffer, contentType: string): Promise<void> {

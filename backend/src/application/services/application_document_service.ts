@@ -1,5 +1,6 @@
 import type { ApplicationDocumentRepo } from "../../domain/repositories/application_document_repo.ts";
 import type { ApplicationRepo } from "../../domain/repositories/application_repo.ts";
+import type { StoragePort } from "../ports/storage_port.ts";
 import { ApplicationDocument } from "../../domain/entities/application_document.ts";
 import type { UploadDocumentDto, ApplicationDocumentResponseDto } from "../dtos/application_document_dtos.ts";
 import { ApplicationError, AppErrorCode, NotFoundError, UnexpectedError } from "../exceptions/app_errors.ts";
@@ -10,6 +11,7 @@ export class ApplicationDocumentService {
     constructor(
         private readonly applicationDocumentRepo: ApplicationDocumentRepo,
         private readonly applicationRepo: ApplicationRepo,
+        private readonly storagePort: StoragePort,
     ) {}
 
     async uploadDocument(dto: UploadDocumentDto): Promise<ApplicationDocumentResponseDto> {
@@ -43,6 +45,17 @@ export class ApplicationDocumentService {
             return docs.map(d => this.toResponseDto(d));
         } catch (e) {
             if (e instanceof ApplicationNotFoundException) throw new NotFoundError(AppErrorCode.APPLICATION_NOT_FOUND, `Application ${applicationId} not found`, e);
+            if (e instanceof ApplicationError) throw e;
+            throw new UnexpectedError(AppErrorCode.UNEXPECTED_ERROR, "Unexpected error", e);
+        }
+    }
+
+    async getDownloadUrl(id: string): Promise<string> {
+        try {
+            const doc = await this.applicationDocumentRepo.findById(id);
+            return await this.storagePort.getSignedDownloadUrl(doc.storageKey);
+        } catch (e) {
+            if (e instanceof ApplicationDocumentNotFoundException) throw new NotFoundError(AppErrorCode.APPLICATION_DOCUMENT_NOT_FOUND, `Document ${id} not found`, e);
             if (e instanceof ApplicationError) throw e;
             throw new UnexpectedError(AppErrorCode.UNEXPECTED_ERROR, "Unexpected error", e);
         }

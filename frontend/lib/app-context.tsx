@@ -1,6 +1,8 @@
 "use client"
 
-import React, { createContext, useContext, useState, useCallback } from "react"
+import React, { createContext, useContext, useState, useCallback, useEffect } from "react"
+import { apiClient } from "@/lib/api-client"
+import { getStoredToken, decodeToken, clearToken } from "@/lib/auth"
 
 export type UserRole = "OWNER" | "RP" | "ADMIN"
 
@@ -35,6 +37,25 @@ export interface Facility {
   updatedAt: string | null
 }
 
+export interface RcfForm {
+  id: string
+  rcfId: string
+  fileName: string
+  title: string
+  formType: string
+  contentType: string
+  storageKey: string
+}
+
+export interface ApplicationDocument {
+  id: string
+  applicationId: string
+  type: string
+  originalFileName: string
+  contentType: string
+  storageKey: string
+}
+
 export interface Application {
   id: string
   rcfId: string
@@ -46,220 +67,166 @@ export interface Application {
   updatedAt: string | null
 }
 
+// Shape returned by the API — does not include profileCompleted
+interface ApiUser {
+  id: string
+  fullName: string
+  email: string
+  role: UserRole
+  phone: string | null
+}
+
+interface ApiOrg {
+  id: string
+  ownerId: string
+  name: string
+}
+
 interface AppContextType {
   user: User | null
   userOrgId: string | null
   isLoggedIn: boolean
+  isLoading: boolean
   facilities: Facility[]
   applications: Application[]
   applicants: Applicant[]
-  login: (role: UserRole) => void
   logout: () => void
-  completeProfile: (data: { fullName: string; phone: string }) => void
-  updateFacilityStatus: (facilityId: string, isActive: boolean, currentOpenings: number) => void
-  submitApplication: (rcfId: string, applicantId: string) => void
-  createApplicant: (name: string, age: number, careNeeds: string) => Applicant
-  updateApplicationStatus: (applicationId: string, status: "PENDING" | "SUBMITTED") => void
+  refreshFacilities: () => Promise<void>
+  createOrg: (name: string) => Promise<void>
+  completeProfile: (data: { fullName: string; phone: string }) => Promise<void>
+  createFacility: (data: { name: string; address: string; phone: string; licensedBeds: number; currentOpenings: number }) => Promise<void>
+  updateFacilityStatus: (facilityId: string, isActive: boolean, currentOpenings: number) => Promise<void>
+  submitApplication: (rcfId: string, applicantId: string) => Promise<void>
+  createApplicant: (name: string, age: number, careNeeds: string) => Promise<Applicant>
+  updateApplicationStatus: (applicationId: string, status: "PENDING" | "SUBMITTED") => Promise<void>
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined)
 
-const MOCK_FACILITIES: Facility[] = [
-  {
-    id: "f1",
-    orgId: "org1",
-    name: "Sunrise Gardens RCF",
-    address: "1201 Sunrise Blvd, Sacramento, CA 95820",
-    phone: "(916) 555-0101",
-    isActive: true,
-    licensedBeds: 6,
-    currentOpenings: 2,
-    updatedAt: new Date(Date.now() - 2 * 60000).toISOString(),
-  },
-  {
-    id: "f2",
-    orgId: "org2",
-    name: "Maplewood Care Home",
-    address: "340 Maplewood Ave, Elk Grove, CA 95758",
-    phone: "(916) 555-0202",
-    isActive: true,
-    licensedBeds: 4,
-    currentOpenings: 0,
-    updatedAt: new Date(Date.now() - 15 * 60000).toISOString(),
-  },
-  {
-    id: "f3",
-    orgId: "org3",
-    name: "Harmony House",
-    address: "88 Harmony Lane, Roseville, CA 95661",
-    phone: "(916) 555-0303",
-    isActive: true,
-    licensedBeds: 6,
-    currentOpenings: 0,
-    updatedAt: new Date(Date.now() - 45 * 60000).toISOString(),
-  },
-  {
-    id: "f4",
-    orgId: "org4",
-    name: "Valley View Residence",
-    address: "512 Valley View Dr, Folsom, CA 95630",
-    phone: "(916) 555-0404",
-    isActive: true,
-    licensedBeds: 5,
-    currentOpenings: 1,
-    updatedAt: new Date(Date.now() - 5 * 60000).toISOString(),
-  },
-  {
-    id: "f5",
-    orgId: "org1",
-    name: "Pinecrest Care Facility",
-    address: "77 Pinecrest Rd, Rancho Cordova, CA 95670",
-    phone: "(916) 555-0505",
-    isActive: true,
-    licensedBeds: 4,
-    currentOpenings: 3,
-    updatedAt: new Date(Date.now() - 10 * 60000).toISOString(),
-  },
-]
-
-const MOCK_APPLICANTS: Applicant[] = [
-  {
-    id: "ap1",
-    rpId: "rp-new",
-    name: "Dorothy Miller",
-    age: 78,
-    careNeeds: "Requires assistance with daily living activities and medication management.",
-    createdAt: new Date(Date.now() - 5 * 86400000).toISOString(),
-    updatedAt: null,
-  },
-  {
-    id: "ap2",
-    rpId: "rp-new",
-    name: "Harold Simpson",
-    age: 83,
-    careNeeds: "Memory care support, early-stage dementia.",
-    createdAt: new Date(Date.now() - 3 * 86400000).toISOString(),
-    updatedAt: null,
-  },
-]
-
-const MOCK_APPLICATIONS: Application[] = [
-  {
-    id: "a1",
-    rcfId: "f2",
-    applicantId: "ap1",
-    rpId: "rp1",
-    submittedAt: new Date(Date.now() - 3 * 86400000).toISOString(),
-    status: "PENDING",
-    createdAt: new Date(Date.now() - 3 * 86400000).toISOString(),
-    updatedAt: null,
-  },
-  {
-    id: "a2",
-    rcfId: "f2",
-    applicantId: "ap2",
-    rpId: "rp2",
-    submittedAt: new Date(Date.now() - 1 * 86400000).toISOString(),
-    status: "SUBMITTED",
-    createdAt: new Date(Date.now() - 1 * 86400000).toISOString(),
-    updatedAt: null,
-  },
-  {
-    id: "a3",
-    rcfId: "f3",
-    applicantId: "ap1",
-    rpId: "rp3",
-    submittedAt: new Date(Date.now() - 5 * 86400000).toISOString(),
-    status: "PENDING",
-    createdAt: new Date(Date.now() - 5 * 86400000).toISOString(),
-    updatedAt: null,
-  },
-]
+function toUser(apiUser: ApiUser): User {
+  return { ...apiUser, profileCompleted: apiUser.phone !== null }
+}
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [userOrgId, setUserOrgId] = useState<string | null>(null)
-  const [facilities, setFacilities] = useState<Facility[]>(MOCK_FACILITIES)
-  const [applications, setApplications] = useState<Application[]>(MOCK_APPLICATIONS)
-  const [applicants, setApplicants] = useState<Applicant[]>(MOCK_APPLICANTS)
+  const [facilities, setFacilities] = useState<Facility[]>([])
+  const [applications, setApplications] = useState<Application[]>([])
+  const [applicants, setApplicants] = useState<Applicant[]>([])
+  const [isLoading, setIsLoading] = useState(true)
 
-  const login = useCallback((role: UserRole) => {
-    if (role === "OWNER") {
-      setUser({
-        id: "owner1",
-        fullName: "Maria Chen",
-        email: "maria.chen@sunrisegardens.com",
-        role: "OWNER",
-        phone: "(555) 123-4567",
-        profileCompleted: true,
-      })
-      setUserOrgId("org1")
-    } else {
-      setUser({
-        id: "rp-new",
-        fullName: "Alex Rivera",
-        email: "alex.rivera@hospital.org",
-        role: "RP",
-        phone: null,
-        profileCompleted: false,
-      })
-      setUserOrgId(null)
+  // Restore session from stored token on mount
+  useEffect(() => {
+    async function restoreSession() {
+      const token = getStoredToken()
+      if (!token) {
+        setIsLoading(false)
+        return
+      }
+
+      const payload = decodeToken(token)
+      if (!payload) {
+        clearToken()
+        setIsLoading(false)
+        return
+      }
+
+      try {
+        const apiUser = await apiClient.get<ApiUser>(`/users/${payload.userId}`)
+        const user = toUser(apiUser)
+        setUser(user)
+
+        // Data fetches are best-effort — errors don't log the user out
+        if (user.role === "OWNER") {
+          try {
+            const org = await apiClient.get<ApiOrg>(`/orgs/owner/${user.id}`)
+            setUserOrgId(org.id)
+            const rcfs = await apiClient.get<Facility[]>(`/rcfs/org/${org.id}`)
+            setFacilities(rcfs)
+            const appsByRcf = await Promise.all(
+              rcfs.map(f => apiClient.get<Application[]>(`/applications/rcf/${f.id}`))
+            )
+            setApplications(appsByRcf.flat())
+          } catch { /* no org yet or data unavailable */ }
+        } else if (user.role === "RP") {
+          try {
+            const [rcfs, apps, myApplicants] = await Promise.all([
+              apiClient.get<Facility[]>('/rcfs/active'),
+              apiClient.get<Application[]>(`/applications/rp/${user.id}`),
+              apiClient.get<Applicant[]>(`/applicants/rp/${user.id}`),
+            ])
+            setFacilities(rcfs)
+            setApplications(apps)
+            setApplicants(myApplicants)
+          } catch { /* data unavailable */ }
+        }
+      } catch {
+        // Only clear token if the user fetch itself fails (invalid/expired token)
+        clearToken()
+      } finally {
+        setIsLoading(false)
+      }
     }
+
+    restoreSession()
   }, [])
 
   const logout = useCallback(() => {
+    clearToken()
     setUser(null)
     setUserOrgId(null)
+    setFacilities([])
+    setApplications([])
+    setApplicants([])
   }, [])
 
-  const completeProfile = useCallback((data: { fullName: string; phone: string }) => {
-    setUser(prev => prev ? { ...prev, ...data, profileCompleted: true } : null)
-  }, [])
-
-  const updateFacilityStatus = useCallback((facilityId: string, isActive: boolean, currentOpenings: number) => {
-    setFacilities(prev =>
-      prev.map(f =>
-        f.id === facilityId
-          ? { ...f, isActive, currentOpenings, updatedAt: new Date().toISOString() }
-          : f
-      )
-    )
-  }, [])
-
-  const createApplicant = useCallback((name: string, age: number, careNeeds: string): Applicant => {
-    const newApplicant: Applicant = {
-      id: `ap${Date.now()}`,
-      rpId: user?.id ?? "",
-      name,
-      age,
-      careNeeds,
-      createdAt: new Date().toISOString(),
-      updatedAt: null,
+  const refreshFacilities = useCallback(async () => {
+    if (!user) return
+    if (user.role === "OWNER" && userOrgId) {
+      const rcfs = await apiClient.get<Facility[]>(`/rcfs/org/${userOrgId}`)
+      setFacilities(rcfs)
+    } else if (user.role === "RP") {
+      const rcfs = await apiClient.get<Facility[]>('/rcfs/active')
+      setFacilities(rcfs)
     }
-    setApplicants(prev => [...prev, newApplicant])
-    return newApplicant
-  }, [user?.id])
+  }, [user, userOrgId])
 
-  const submitApplication = useCallback((rcfId: string, applicantId: string) => {
-    const newApplication: Application = {
-      id: `a${Date.now()}`,
-      rcfId,
-      applicantId,
-      rpId: user?.id ?? "",
-      submittedAt: null,
-      status: "PENDING",
-      createdAt: new Date().toISOString(),
-      updatedAt: null,
-    }
-    setApplications(prev => [...prev, newApplication])
-  }, [user?.id])
+  const createOrg = useCallback(async (name: string) => {
+    const org = await apiClient.post<ApiOrg>('/orgs', { name })
+    setUserOrgId(org.id)
+  }, [])
 
-  const updateApplicationStatus = useCallback((applicationId: string, status: "PENDING" | "SUBMITTED") => {
-    setApplications(prev =>
-      prev.map(a =>
-        a.id === applicationId ? { ...a, status } : a
-      )
-    )
+  const completeProfile = useCallback(async (data: { fullName: string; phone: string }) => {
+    if (!user) return
+    const updated = await apiClient.patch<ApiUser>(`/users/${user.id}`, data)
+    setUser(toUser(updated))
+  }, [user])
+
+  const createFacility = useCallback(async (data: { name: string; address: string; phone: string; licensedBeds: number; currentOpenings: number }) => {
+    if (!userOrgId) return
+    const created = await apiClient.post<Facility>('/rcfs', { ...data, orgId: userOrgId, isActive: true })
+    setFacilities(prev => [...prev, created])
+  }, [userOrgId])
+
+  const updateFacilityStatus = useCallback(async (facilityId: string, isActive: boolean, currentOpenings: number) => {
+    const updated = await apiClient.patch<Facility>(`/rcfs/${facilityId}`, { isActive, currentOpenings })
+    setFacilities(prev => prev.map(f => f.id === facilityId ? updated : f))
+  }, [])
+
+  const createApplicant = useCallback(async (name: string, age: number, careNeeds: string): Promise<Applicant> => {
+    const created = await apiClient.post<Applicant>('/applicants', { name, age, careNeeds })
+    setApplicants(prev => [...prev, created])
+    return created
+  }, [])
+
+  const submitApplication = useCallback(async (rcfId: string, applicantId: string) => {
+    const created = await apiClient.post<Application>('/applications', { rcfId, applicantId })
+    setApplications(prev => [...prev, created])
+  }, [])
+
+  const updateApplicationStatus = useCallback(async (applicationId: string, status: "PENDING" | "SUBMITTED") => {
+    const updated = await apiClient.patch<Application>(`/applications/${applicationId}/status`, { status })
+    setApplications(prev => prev.map(a => a.id === applicationId ? updated : a))
   }, [])
 
   return (
@@ -268,12 +235,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         user,
         userOrgId,
         isLoggedIn: !!user,
+        isLoading,
         facilities,
         applications,
         applicants,
-        login,
         logout,
+        refreshFacilities,
+        createOrg,
         completeProfile,
+        createFacility,
         updateFacilityStatus,
         submitApplication,
         createApplicant,

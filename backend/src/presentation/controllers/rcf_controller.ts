@@ -22,6 +22,16 @@ rcfController.post('/', async (c) => {
     }
 });
 
+// GET /active — list all active RCFs across all orgs (used by RPs)
+rcfController.get('/active', async (c) => {
+    try {
+        const result = await rcfService.getAllActiveRcfs();
+        return c.json(result);
+    } catch (e) {
+        return c.json({ message: 'Internal server error' }, 500);
+    }
+});
+
 // GET /org/:orgId/active — list active RCFs with openings for an org
 rcfController.get('/org/:orgId/active', async (c) => {
     const orgId = c.req.param('orgId');

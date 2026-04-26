@@ -45,5 +45,5 @@ export const applicationService = new ApplicationService(
     applicationDocumentRepo,
     userRepo,
 );
-export const rcfFormService = new RcfFormService(rcfFormRepo, rcfRepo);
-export const applicationDocumentService = new ApplicationDocumentService(applicationDocumentRepo, applicationRepo);
+export const rcfFormService = new RcfFormService(rcfFormRepo, rcfRepo, storageAdapter);
+export const applicationDocumentService = new ApplicationDocumentService(applicationDocumentRepo, applicationRepo, storageAdapter);

@@ -40,6 +40,16 @@ export class RcfService {
         }
     }
 
+    async getAllActiveRcfs(): Promise<RcfResponseDto[]> {
+        try {
+            const rcfs = await this.rcfRepo.findAllActive();
+            return rcfs.map(r => this.toResponseDto(r));
+        } catch (e) {
+            if (e instanceof ApplicationError) throw e;
+            throw new UnexpectedError(AppErrorCode.UNEXPECTED_ERROR, "Unexpected error", e);
+        }
+    }
+
     async getRcfsByOrgId(orgId: string): Promise<RcfResponseDto[]> {
         try {
             await this.orgRepo.findById(orgId);

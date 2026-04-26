@@ -26,11 +26,13 @@ import {
   CheckCircle2,
   RefreshCw,
   Plus,
+  Loader2,
 } from "lucide-react"
+import { handleApiError } from "@/lib/handle-error"
 import { formatDistanceToNow } from "date-fns"
 
 export function ReferrerFacilities() {
-  const { user, facilities, applicants, submitApplication, createApplicant } = useApp()
+  const { user, facilities, applicants, submitApplication, createApplicant, refreshFacilities } = useApp()
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<"all" | "openings" | "no-vacancies">("all")
   const [applyFacility, setApplyFacility] = useState<Facility | null>(null)
@@ -40,6 +42,8 @@ export function ReferrerFacilities() {
   const [newCareNeeds, setNewCareNeeds] = useState("")
   const [showSuccess, setShowSuccess] = useState(false)
   const [lastRefreshed, setLastRefreshed] = useState(new Date())
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isRefreshing, setIsRefreshing] = useState(false)
 
   const myApplicants = applicants.filter((a) => a.rpId === user?.id)
 
@@ -62,19 +66,36 @@ export function ReferrerFacilities() {
     setNewCareNeeds("")
   }
 
-  function handleApply() {
+  async function handleApply() {
     if (!applyFacility) return
-
-    let applicantId = selectedApplicantId
-    if (selectedApplicantId === "new") {
-      const created = createApplicant(newName, parseInt(newAge), newCareNeeds)
-      applicantId = created.id
+    setIsSubmitting(true)
+    try {
+      let applicantId = selectedApplicantId
+      if (selectedApplicantId === "new") {
+        const created = await createApplicant(newName, parseInt(newAge), newCareNeeds)
+        applicantId = created.id
+      }
+      await submitApplication(applyFacility.id, applicantId)
+      setApplyFacility(null)
+      setShowSuccess(true)
+      setTimeout(() => setShowSuccess(false), 3000)
+    } catch (e) {
+      handleApiError(e)
+    } finally {
+      setIsSubmitting(false)
     }
+  }
 
-    submitApplication(applyFacility.id, applicantId)
-    setApplyFacility(null)
-    setShowSuccess(true)
-    setTimeout(() => setShowSuccess(false), 3000)
+  async function handleRefresh() {
+    setIsRefreshing(true)
+    try {
+      await refreshFacilities()
+      setLastRefreshed(new Date())
+    } catch (e) {
+      handleApiError(e)
+    } finally {
+      setIsRefreshing(false)
+    }
   }
 
   const isNewApplicantValid = newName.trim() && parseInt(newAge) > 0 && newCareNeeds.trim()
@@ -95,9 +116,12 @@ export function ReferrerFacilities() {
           variant="outline"
           size="sm"
           className="rounded-xl"
-          onClick={() => setLastRefreshed(new Date())}
+          onClick={handleRefresh}
+          disabled={isRefreshing}
         >
-          <RefreshCw className="mr-2 h-4 w-4" />
+          {isRefreshing
+            ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            : <RefreshCw className="mr-2 h-4 w-4" />}
           Refresh
         </Button>
       </div>
@@ -288,7 +312,8 @@ export function ReferrerFacilities() {
             <Button variant="outline" className="rounded-xl" onClick={() => setApplyFacility(null)}>
               Cancel
             </Button>
-            <Button className="rounded-xl" onClick={handleApply} disabled={!canSubmit}>
+            <Button className="rounded-xl" onClick={handleApply} disabled={!canSubmit || isSubmitting}>
+              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Submit Application
             </Button>
           </DialogFooter>

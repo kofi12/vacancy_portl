@@ -1,5 +1,6 @@
 import type { RcfFormRepo } from "../../domain/repositories/rcf_form_repo.ts";
 import type { RcfRepo } from "../../domain/repositories/rcf_repo.ts";
+import type { StoragePort } from "../ports/storage_port.ts";
 import { RcfForm } from "../../domain/entities/rcf_form.ts";
 import type { CreateRcfFormDto, RcfFormResponseDto } from "../dtos/rcf_form_dtos.ts";
 import { ApplicationError, AppErrorCode, NotFoundError, UnexpectedError } from "../exceptions/app_errors.ts";
@@ -10,6 +11,7 @@ export class RcfFormService {
     constructor(
         private readonly rcfFormRepo: RcfFormRepo,
         private readonly rcfRepo: RcfRepo,
+        private readonly storagePort: StoragePort,
     ) {}
 
     async createRcfForm(dto: CreateRcfFormDto): Promise<RcfFormResponseDto> {
@@ -43,6 +45,17 @@ export class RcfFormService {
             return forms.map(f => this.toResponseDto(f));
         } catch (e) {
             if (e instanceof RcfNotFoundException) throw new NotFoundError(AppErrorCode.RCF_NOT_FOUND, `RCF ${rcfId} not found`, e);
+            if (e instanceof ApplicationError) throw e;
+            throw new UnexpectedError(AppErrorCode.UNEXPECTED_ERROR, "Unexpected error", e);
+        }
+    }
+
+    async getDownloadUrl(id: string): Promise<string> {
+        try {
+            const form = await this.rcfFormRepo.findById(id);
+            return await this.storagePort.getSignedDownloadUrl(form.storageKey);
+        } catch (e) {
+            if (e instanceof RcfFormNotFoundException) throw new NotFoundError(AppErrorCode.RCF_FORM_NOT_FOUND, `RCF form ${id} not found`, e);
             if (e instanceof ApplicationError) throw e;
             throw new UnexpectedError(AppErrorCode.UNEXPECTED_ERROR, "Unexpected error", e);
         }
