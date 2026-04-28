@@ -89,7 +89,7 @@ beforeEach(() => {
 describe('ApplicationService', () => {
     describe('createApplication', () => {
         it('creates and returns an application DTO', async () => {
-            const applicant = Applicant.create('rp-1', 'John Doe', 72, 'General assisted living');
+            const applicant = Applicant.create('rp-1', 'John Doe', '1952-01-01', 72, 'General assisted living');
             const rcf = makeActiveRcf();
             vi.mocked(mockApplicantRepo.findById).mockResolvedValue(applicant);
             vi.mocked(mockRcfRepo.findById).mockResolvedValue(rcf);
@@ -103,7 +103,7 @@ describe('ApplicationService', () => {
 
             expect(mockApplicationRepo.create).toHaveBeenCalled();
             expect(result.rcfId).toBe(rcf.id);
-            expect(result.status).toBe(Status.PENDING);
+            expect(result.status).toBe(Status.SUBMITTED);
         });
 
         it('throws NotFoundError when RCF does not exist', async () => {
@@ -122,7 +122,7 @@ describe('ApplicationService', () => {
         });
 
         it('throws BusinessRuleError when RCF is inactive', async () => {
-            const applicant = Applicant.create('rp-1', 'John Doe', 72, 'General assisted living');
+            const applicant = Applicant.create('rp-1', 'John Doe', '1952-01-01', 72, 'General assisted living');
             const rcf = makeInactiveRcf();
             vi.mocked(mockApplicantRepo.findById).mockResolvedValue(applicant);
             vi.mocked(mockRcfRepo.findById).mockResolvedValue(rcf);

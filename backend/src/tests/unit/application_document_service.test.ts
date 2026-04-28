@@ -4,6 +4,7 @@ import { ApplicationDocument } from '../../domain/entities/application_document.
 import { TemplateType, ContentType } from '../../domain/entities/rcf_form.ts';
 import type { ApplicationDocumentRepo } from '../../domain/repositories/application_document_repo.ts';
 import type { ApplicationRepo } from '../../domain/repositories/application_repo.ts';
+import type { StoragePort } from '../../application/ports/storage_port.ts';
 import { NotFoundError } from '../../application/exceptions/app_errors.ts';
 import { ApplicationNotFoundException } from '../../domain/exceptions/application_exceptions.ts';
 import { ApplicationDocumentNotFoundException } from '../../domain/exceptions/application_document_exception.ts';
@@ -27,7 +28,13 @@ const mockApplicationRepo = {
     delete: vi.fn(),
 } as unknown as ApplicationRepo;
 
-const service = new ApplicationDocumentService(mockApplicationDocumentRepo, mockApplicationRepo);
+const mockStoragePort = {
+    upload: vi.fn(),
+    getSignedDownloadUrl: vi.fn(),
+    delete: vi.fn(),
+} as unknown as StoragePort;
+
+const service = new ApplicationDocumentService(mockApplicationDocumentRepo, mockApplicationRepo, mockStoragePort);
 
 const makeDoc = (applicationId = 'app-1') =>
     ApplicationDocument.create(applicationId, TemplateType.INTAKE_FORM, 'intake.pdf', ContentType.PDF, 'app-docs/app-1/uuid');

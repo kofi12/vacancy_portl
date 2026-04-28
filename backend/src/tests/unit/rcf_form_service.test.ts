@@ -3,6 +3,7 @@ import { RcfFormService } from '../../application/services/rcf_form_service.ts';
 import { RcfForm, TemplateType, ContentType } from '../../domain/entities/rcf_form.ts';
 import type { RcfFormRepo } from '../../domain/repositories/rcf_form_repo.ts';
 import type { RcfRepo } from '../../domain/repositories/rcf_repo.ts';
+import type { StoragePort } from '../../application/ports/storage_port.ts';
 import { NotFoundError } from '../../application/exceptions/app_errors.ts';
 import { RcfFormNotFoundException } from '../../domain/exceptions/rcf_form_exceptions.ts';
 import { RcfNotFoundException } from '../../domain/exceptions/rcf_exceptions.ts';
@@ -24,7 +25,13 @@ const mockRcfRepo = {
     delete: vi.fn(),
 } as unknown as RcfRepo;
 
-const service = new RcfFormService(mockRcfFormRepo, mockRcfRepo);
+const mockStoragePort = {
+    upload: vi.fn(),
+    getSignedDownloadUrl: vi.fn(),
+    delete: vi.fn(),
+} as unknown as StoragePort;
+
+const service = new RcfFormService(mockRcfFormRepo, mockRcfRepo, mockStoragePort);
 
 const makeForm = (rcfId = 'rcf-1') =>
     RcfForm.create(rcfId, 'intake.pdf', 'Intake Form', TemplateType.INTAKE_FORM, ContentType.PDF, 'rcf-forms/rcf-1/uuid');

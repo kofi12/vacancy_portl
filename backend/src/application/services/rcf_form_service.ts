@@ -53,7 +53,7 @@ export class RcfFormService {
     async getDownloadUrl(id: string): Promise<string> {
         try {
             const form = await this.rcfFormRepo.findById(id);
-            return await this.storagePort.getSignedDownloadUrl(form.storageKey);
+            return await this.storagePort.getSignedDownloadUrl(form.storageKey, 3600);
         } catch (e) {
             if (e instanceof RcfFormNotFoundException) throw new NotFoundError(AppErrorCode.RCF_FORM_NOT_FOUND, `RCF form ${id} not found`, e);
             if (e instanceof ApplicationError) throw e;

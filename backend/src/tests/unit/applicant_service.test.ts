@@ -36,7 +36,7 @@ describe('ApplicantService', () => {
             vi.mocked(mockUserRepo.findById).mockResolvedValue({} as any);
             vi.mocked(mockApplicantRepo.create).mockResolvedValue({} as any);
 
-            const result = await service.createApplicant({ rpId: 'rp-1', name: 'John Doe', age: 72, careNeeds: 'General assisted living' });
+            const result = await service.createApplicant({ rpId: 'rp-1', name: 'John Doe', dob: '1952-01-01', age: 72, careNeeds: 'General assisted living' });
 
             expect(mockUserRepo.findById).toHaveBeenCalledWith('rp-1');
             expect(mockApplicantRepo.create).toHaveBeenCalled();
@@ -47,14 +47,14 @@ describe('ApplicantService', () => {
         it('throws NotFoundError when the RP does not exist', async () => {
             vi.mocked(mockUserRepo.findById).mockRejectedValue(new UserNotFoundException('rp-1'));
 
-            await expect(service.createApplicant({ rpId: 'rp-1', name: 'John Doe', age: 72, careNeeds: 'General assisted living' }))
+            await expect(service.createApplicant({ rpId: 'rp-1', name: 'John Doe', dob: '1952-01-01', age: 72, careNeeds: 'General assisted living' }))
                 .rejects.toBeInstanceOf(NotFoundError);
         });
     });
 
     describe('getApplicantById', () => {
         it('returns the applicant DTO', async () => {
-            const applicant = Applicant.create('rp-1', 'Jane Doe', 68, 'Memory care support');
+            const applicant = Applicant.create('rp-1', 'Jane Doe', '1956-05-15', 68, 'Memory care support');
             vi.mocked(mockApplicantRepo.findById).mockResolvedValue(applicant);
 
             const result = await service.getApplicantById(applicant.id);
@@ -74,7 +74,7 @@ describe('ApplicantService', () => {
 
     describe('updateApplicant', () => {
         it('updates and returns the applicant', async () => {
-            const applicant = Applicant.create('rp-1', 'Old Name', 75, 'Mobility assistance');
+            const applicant = Applicant.create('rp-1', 'Old Name', '1949-03-10', 75, 'Mobility assistance');
             vi.mocked(mockApplicantRepo.findById).mockResolvedValue(applicant);
             vi.mocked(mockApplicantRepo.update).mockResolvedValue(applicant);
 
@@ -85,7 +85,7 @@ describe('ApplicantService', () => {
         });
 
         it('throws ForbiddenError when requester is not the owner', async () => {
-            const applicant = Applicant.create('rp-1', 'John Doe', 72, 'General assisted living');
+            const applicant = Applicant.create('rp-1', 'John Doe', '1952-01-01', 72, 'General assisted living');
             vi.mocked(mockApplicantRepo.findById).mockResolvedValue(applicant);
 
             await expect(service.updateApplicant(applicant.id, 'rp-2', { name: 'Hacked' }))
@@ -95,7 +95,7 @@ describe('ApplicantService', () => {
 
     describe('deleteApplicant', () => {
         it('deletes and returns the applicant DTO', async () => {
-            const applicant = Applicant.create('rp-1', 'John Doe', 72, 'General assisted living');
+            const applicant = Applicant.create('rp-1', 'John Doe', '1952-01-01', 72, 'General assisted living');
             vi.mocked(mockApplicantRepo.findById).mockResolvedValue(applicant);
             vi.mocked(mockApplicantRepo.delete).mockResolvedValue(applicant);
 
@@ -106,7 +106,7 @@ describe('ApplicantService', () => {
         });
 
         it('throws ForbiddenError when requester is not the owner', async () => {
-            const applicant = Applicant.create('rp-1', 'John Doe', 72, 'General assisted living');
+            const applicant = Applicant.create('rp-1', 'John Doe', '1952-01-01', 72, 'General assisted living');
             vi.mocked(mockApplicantRepo.findById).mockResolvedValue(applicant);
 
             await expect(service.deleteApplicant(applicant.id, 'rp-2'))

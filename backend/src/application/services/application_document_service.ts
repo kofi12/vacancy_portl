@@ -53,7 +53,7 @@ export class ApplicationDocumentService {
     async getDownloadUrl(id: string): Promise<string> {
         try {
             const doc = await this.applicationDocumentRepo.findById(id);
-            return await this.storagePort.getSignedDownloadUrl(doc.storageKey);
+            return await this.storagePort.getSignedDownloadUrl(doc.storageKey, 3600);
         } catch (e) {
             if (e instanceof ApplicationDocumentNotFoundException) throw new NotFoundError(AppErrorCode.APPLICATION_DOCUMENT_NOT_FOUND, `Document ${id} not found`, e);
             if (e instanceof ApplicationError) throw e;
