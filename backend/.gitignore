@@ -24,6 +24,12 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# credentials
+*.json
+!package.json
+!tsconfig.json
+!package-lock.json
+
 # misc
 .DS_Store
 CLAUDE.md
