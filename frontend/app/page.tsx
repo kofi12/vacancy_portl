@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { AppProvider, useApp } from "@/lib/app-context"
 import { LoginScreen } from "@/components/login-screen"
 import { TopNav } from "@/components/top-nav"
@@ -23,6 +23,26 @@ function AppContent() {
   const { user, isLoggedIn, isLoading, facilities, applications, userOrgId } = useApp()
   const [activeView, setActiveView] = useState("")
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+
+  function navigate(view: string) {
+    setActiveView(view)
+    window.history.pushState({ view }, '')
+  }
+
+  useEffect(() => {
+    if (isLoggedIn) {
+      window.history.replaceState({ view: currentView }, '')
+    }
+  }, [isLoggedIn]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    const handler = (e: PopStateEvent) => {
+      const defaultView = user?.role === "OWNER" ? "dashboard" : "rp-dashboard"
+      setActiveView(e.state?.view ?? defaultView)
+    }
+    window.addEventListener('popstate', handler)
+    return () => window.removeEventListener('popstate', handler)
+  }, [user?.role])
 
   if (isLoading) {
     return (

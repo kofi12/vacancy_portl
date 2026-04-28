@@ -12,7 +12,7 @@ import { formatDistanceToNow, format } from "date-fns"
 type AppStatus = Application["status"]
 
 const STATUS_LABEL: Record<AppStatus, string> = {
-  SUBMITTED: "Submitted", IN_REVIEW: "In Review", ACCEPTED: "Accepted", DECLINED: "Declined",
+  PENDING: "Pending", SUBMITTED: "Submitted", IN_REVIEW: "In Review", ACCEPTED: "Accepted", DECLINED: "Declined",
 }
 
 const FILTERS: { key: "all" | AppStatus; label: string }[] = [

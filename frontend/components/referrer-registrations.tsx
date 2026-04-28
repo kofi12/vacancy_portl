@@ -3,8 +3,9 @@
 import { useState, useEffect } from "react"
 import { useApp, type Application, type RcfForm, type ApplicationDocument, type Facility, type Applicant } from "@/lib/app-context"
 import { apiClient } from "@/lib/api-client"
-import { Btn, StatusChip, SimpleModal, PageHeader, FieldGroup, cardCls, inputCls } from "@/components/ui-kit"
-import { Building2, ChevronDown, ChevronUp, Download, Upload, FileText, Loader2, Trash2, ClipboardList, Plus } from "lucide-react"
+import { Btn, StatusChip, SimpleModal, PageHeader, FieldGroup, SearchableSelect, cardCls, inputCls } from "@/components/ui-kit"
+import { Building2, ChevronDown, ChevronUp, Download, Upload, FileText, Loader2, Trash2, ClipboardList, Plus, ExternalLink } from "lucide-react"
+import { ApplicationDocsModal } from "@/components/application-docs-modal"
 import { handleApiError } from "@/lib/handle-error"
 import { downloadFile } from "@/lib/download"
 import { formatDistanceToNow } from "date-fns"
@@ -12,7 +13,7 @@ import { formatDistanceToNow } from "date-fns"
 type AppStatus = Application["status"]
 
 const STATUS_LABEL: Record<AppStatus, string> = {
-  SUBMITTED: "Submitted", IN_REVIEW: "In Review", ACCEPTED: "Accepted", DECLINED: "Declined",
+  PENDING: "Pending", SUBMITTED: "Submitted", IN_REVIEW: "In Review", ACCEPTED: "Accepted", DECLINED: "Declined",
 }
 
 export function ReferrerRegistrations() {
@@ -23,6 +24,7 @@ export function ReferrerRegistrations() {
   const [selectedApplicantId, setSelectedApplicantId] = useState("")
   const [selectedFacilityId, setSelectedFacilityId]   = useState("")
   const [isSubmitting, setIsSubmitting]     = useState(false)
+  const [pendingApplication, setPendingApplication] = useState<Application | null>(null)
 
   const myApps = applications
     .filter((a) => a.rpId === user?.id)
@@ -41,8 +43,9 @@ export function ReferrerRegistrations() {
     if (!selectedApplicantId || !selectedFacilityId) return
     setIsSubmitting(true)
     try {
-      await submitApplication(selectedFacilityId, selectedApplicantId)
+      const application = await submitApplication(selectedFacilityId, selectedApplicantId)
       setShowNew(false)
+      setPendingApplication(application)
     } catch (e) { handleApiError(e) }
     finally { setIsSubmitting(false) }
   }
@@ -131,40 +134,46 @@ export function ReferrerRegistrations() {
         ) : (
           <>
             <FieldGroup label="Select Applicant" required>
-              <div className="flex flex-col gap-2 max-h-[180px] overflow-y-auto">
-                {myApplicants.map((a) => (
-                  <button key={a.id} type="button" onClick={() => setSelectedApplicantId(a.id)}
-                    className="rounded-[9px] border-2 p-3 text-left text-[14px] transition-all cursor-pointer font-[inherit]"
-                    style={{ borderColor: selectedApplicantId === a.id ? "#2563eb" : "#e2e8f0", background: selectedApplicantId === a.id ? "#eff6ff" : "#fff" }}>
+              <SearchableSelect
+                items={myApplicants}
+                selected={selectedApplicantId}
+                onSelect={setSelectedApplicantId}
+                getSearchText={a => `${a.name} ${a.careNeeds}`}
+                placeholder="Search applicants…"
+                renderItem={(a) => (
+                  <>
                     <span className="font-semibold text-[#0f172a]">{a.name}</span>
                     <span className="ml-2 text-[12px] text-[#64748b]">Age {a.age} — {a.careNeeds}</span>
-                  </button>
-                ))}
-              </div>
+                  </>
+                )}
+              />
             </FieldGroup>
 
             <FieldGroup label="Select RCF" required>
               {openFacilities.length === 0 ? (
                 <p className="text-[13px] text-[#94a3b8]">No facilities with vacancies available right now.</p>
               ) : (
-                <div className="flex flex-col gap-2 max-h-[200px] overflow-y-auto">
-                  {openFacilities.map((f) => (
-                    <button key={f.id} type="button" onClick={() => setSelectedFacilityId(f.id)}
-                      className="rounded-[9px] border-2 p-3 text-left text-[14px] transition-all cursor-pointer font-[inherit]"
-                      style={{ borderColor: selectedFacilityId === f.id ? "#2563eb" : "#e2e8f0", background: selectedFacilityId === f.id ? "#eff6ff" : "#fff" }}>
+                <SearchableSelect
+                  items={openFacilities}
+                  selected={selectedFacilityId}
+                  onSelect={setSelectedFacilityId}
+                  getSearchText={f => `${f.name} ${f.address}`}
+                  placeholder="Search facilities…"
+                  renderItem={(f) => (
+                    <>
                       <span className="font-semibold text-[#0f172a]">{f.name}</span>
                       <span className="ml-2 text-[12px] text-[#16a34a] font-semibold">{f.currentOpenings} opening{f.currentOpenings !== 1 ? "s" : ""}</span>
                       {f.address && <div className="mt-0.5 text-[12px] text-[#64748b]">{f.address}</div>}
-                    </button>
-                  ))}
-                </div>
+                    </>
+                  )}
+                />
               )}
             </FieldGroup>
 
             <div className="flex justify-end gap-2">
               <Btn variant="secondary" onClick={() => setShowNew(false)}>Cancel</Btn>
               <Btn disabled={!canSubmit || openFacilities.length === 0} loading={isSubmitting} onClick={handleSubmit}>
-                Submit Application
+                Apply
               </Btn>
             </div>
           </>
@@ -175,18 +184,30 @@ export function ReferrerRegistrations() {
           </div>
         )}
       </SimpleModal>
+
+      <ApplicationDocsModal
+        application={pendingApplication}
+        title={pendingApplication
+          ? `Apply to ${facilities.find(f => f.id === pendingApplication.rcfId)?.name ?? "RCF"}`
+          : ""}
+        isOpen={!!pendingApplication}
+        onClose={() => setPendingApplication(null)}
+      />
     </div>
   )
 }
 
 function AppDocs({ application, rcfId }: { application: Application; rcfId: string }) {
-  const [rcfForms, setRcfForms] = useState<RcfForm[]>([])
-  const [docs, setDocs]         = useState<ApplicationDocument[]>([])
-  const [loading, setLoading]   = useState(true)
+  const { updateApplicationStatus } = useApp()
+  const [rcfForms, setRcfForms]     = useState<RcfForm[]>([])
+  const [docs, setDocs]             = useState<ApplicationDocument[]>([])
+  const [loading, setLoading]       = useState(true)
   const [uploadFile, setUploadFile] = useState<File | null>(null)
-  const [isUploading, setIsUploading] = useState(false)
+  const [isUploading, setIsUploading]   = useState(false)
+  const [isSubmittingApp, setIsSubmittingApp] = useState(false)
 
-  const canEdit = application.status === "SUBMITTED"
+  const canEdit = application.status === "PENDING"
+  const allDocsUploaded = rcfForms.length === 0 || docs.length >= rcfForms.length
 
   useEffect(() => {
     let cancelled = false
@@ -200,11 +221,26 @@ function AppDocs({ application, rcfId }: { application: Application; rcfId: stri
     return () => { cancelled = true }
   }, [application.id, rcfId])
 
+  async function handleView(id: string) {
+    try {
+      const { url } = await apiClient.get<{ url: string }>(`/rcf-forms/${id}/download`)
+      window.open(url, "_blank")
+    } catch (e) { handleApiError(e) }
+  }
+
   async function handleDownloadForm(id: string, fileName: string) {
     try {
       const { url } = await apiClient.get<{ url: string }>(`/rcf-forms/${id}/download`)
       await downloadFile(url, fileName)
     } catch (e) { handleApiError(e) }
+  }
+
+  async function handleSubmitApp() {
+    setIsSubmittingApp(true)
+    try {
+      await updateApplicationStatus(application.id, "SUBMITTED")
+    } catch (e) { handleApiError(e) }
+    finally { setIsSubmittingApp(false) }
   }
 
   async function handleUpload(e: React.FormEvent) {
@@ -258,13 +294,19 @@ function AppDocs({ application, rcfId }: { application: Application; rcfId: stri
           <div className="flex flex-col gap-1.5">
             {rcfForms.map((form) => (
               <div key={form.id} className="flex items-center justify-between rounded-[9px] border border-[#e2e8f0] bg-white px-3 py-2">
-                <div className="flex items-center gap-2 text-[14px] text-[#374151]">
+                <div className="flex items-center gap-2 text-[13px] text-[#374151]">
                   <FileText className="h-4 w-4 text-[#94a3b8]" />{form.title}
                 </div>
-                <button onClick={() => handleDownloadForm(form.id, form.fileName)}
-                  className="flex items-center gap-1 text-[13px] font-semibold text-[#2563eb] cursor-pointer border-none bg-transparent">
-                  <Download className="h-3.5 w-3.5" /> Download
-                </button>
+                <div className="flex items-center gap-3">
+                  <button onClick={() => handleView(form.id)}
+                    className="flex items-center gap-1 text-[12px] font-semibold text-[#64748b] cursor-pointer border-none bg-transparent hover:text-[#0f172a]">
+                    <ExternalLink className="h-3.5 w-3.5" /> View
+                  </button>
+                  <button onClick={() => handleDownloadForm(form.id, form.fileName)}
+                    className="flex items-center gap-1 text-[12px] font-semibold text-[#2563eb] cursor-pointer border-none bg-transparent">
+                    <Download className="h-3.5 w-3.5" /> Download
+                  </button>
+                </div>
               </div>
             ))}
           </div>
@@ -303,7 +345,7 @@ function AppDocs({ application, rcfId }: { application: Application; rcfId: stri
       {canEdit && (
         <form onSubmit={handleUpload} className="flex items-end gap-2 border-t border-[#e2e8f0] pt-3">
           <div className="flex-1">
-            <label htmlFor={`doc-file-${application.id}`} className="mb-1 block text-[12px] text-[#94a3b8]">
+            <label htmlFor={`doc-file-${application.id}`} className="mb-1 block text-[12px] font-semibold text-[#374151]">
               Upload completed form
             </label>
             <input id={`doc-file-${application.id}`} type="file" accept=".pdf" className={inputCls}
@@ -314,6 +356,19 @@ function AppDocs({ application, rcfId }: { application: Application; rcfId: stri
             {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
           </button>
         </form>
+      )}
+
+      {canEdit && (
+        <div className="flex items-center justify-between border-t border-[#e2e8f0] pt-3">
+          <p className="text-[12px] text-[#94a3b8]">
+            {allDocsUploaded
+              ? "All forms uploaded — ready to submit."
+              : `${Math.max(0, rcfForms.length - docs.length)} form${rcfForms.length - docs.length !== 1 ? "s" : ""} remaining`}
+          </p>
+          <Btn size="sm" disabled={!allDocsUploaded} loading={isSubmittingApp} onClick={handleSubmitApp}>
+            Submit Application
+          </Btn>
+        </div>
       )}
     </div>
   )

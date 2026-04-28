@@ -1,6 +1,6 @@
 "use client"
 
-import React from "react"
+import React, { useState } from "react"
 import { Loader2 } from "lucide-react"
 
 // ── Btn ─────────────────────────────────────────────────────────────────────
@@ -146,3 +146,55 @@ export function FieldGroup({ label, required, children }: {
 // ── Shared class strings ─────────────────────────────────────────────────────
 export const cardCls = "bg-white rounded-[16px] border border-[#f1f5f9] shadow-[0_1px_4px_rgba(0,0,0,0.05)]"
 export const inputCls = "w-full rounded-[9px] border border-[#e2e8f0] bg-white px-3 py-[9px] text-[14px] text-[#0f172a] outline-none transition-colors focus:border-[#2563eb] font-[inherit]"
+
+// ── SearchableSelect ──────────────────────────────────────────────────────────
+export function SearchableSelect<T extends { id: string }>({
+  items,
+  selected,
+  onSelect,
+  getSearchText,
+  renderItem,
+  placeholder = "Search…",
+}: {
+  items: T[]
+  selected: string
+  onSelect: (id: string) => void
+  getSearchText: (item: T) => string
+  renderItem: (item: T, isSelected: boolean) => React.ReactNode
+  placeholder?: string
+}) {
+  const [query, setQuery] = useState("")
+  const filtered = query
+    ? items.filter(i => getSearchText(i).toLowerCase().includes(query.toLowerCase()))
+    : items
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      <input
+        className={inputCls}
+        placeholder={placeholder}
+        value={query}
+        onChange={e => setQuery(e.target.value)}
+      />
+      <div className="flex flex-col gap-1 max-h-[220px] overflow-y-auto">
+        {filtered.length === 0 && (
+          <p className="text-[13px] text-[#94a3b8] px-1 py-2">No matches.</p>
+        )}
+        {filtered.map(item => (
+          <button
+            key={item.id}
+            type="button"
+            onClick={() => onSelect(item.id)}
+            className="rounded-[9px] border-2 p-3 text-left text-[14px] transition-all cursor-pointer font-[inherit]"
+            style={{
+              borderColor: selected === item.id ? "#2563eb" : "#e2e8f0",
+              background: selected === item.id ? "#eff6ff" : "#fff",
+            }}
+          >
+            {renderItem(item, selected === item.id)}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}

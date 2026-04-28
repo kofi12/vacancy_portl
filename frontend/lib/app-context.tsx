@@ -59,7 +59,7 @@ export interface ApplicationDocument {
   storageKey: string
 }
 
-export type ApplicationStatus = "SUBMITTED" | "IN_REVIEW" | "ACCEPTED" | "DECLINED"
+export type ApplicationStatus = "PENDING" | "SUBMITTED" | "IN_REVIEW" | "ACCEPTED" | "DECLINED"
 
 export interface Application {
   id: string
@@ -104,7 +104,7 @@ interface AppContextType {
   completeProfile: (data: { fullName: string; phone: string; title?: string; organization?: string }) => Promise<void>
   createFacility: (data: { name: string; address: string; phone: string; licensedBeds: number; currentOpenings: number }) => Promise<void>
   updateFacilityStatus: (facilityId: string, isActive: boolean, currentOpenings: number) => Promise<void>
-  submitApplication: (rcfId: string, applicantId: string) => Promise<void>
+  submitApplication: (rcfId: string, applicantId: string) => Promise<Application>
   createApplicant: (name: string, dob: string, age: number, careNeeds: string) => Promise<Applicant>
   updateApplicationStatus: (applicationId: string, status: ApplicationStatus, declineReason?: string) => Promise<void>
 }
@@ -230,9 +230,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return created
   }, [])
 
-  const submitApplication = useCallback(async (rcfId: string, applicantId: string) => {
+  const submitApplication = useCallback(async (rcfId: string, applicantId: string): Promise<Application> => {
     const created = await apiClient.post<Application>('/applications', { rcfId, applicantId })
     setApplications(prev => [...prev, created])
+    return created
   }, [])
 
   const updateApplicationStatus = useCallback(async (applicationId: string, status: ApplicationStatus, declineReason?: string) => {

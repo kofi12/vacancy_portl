@@ -1,10 +1,11 @@
 "use client"
 
 import { useState } from "react"
-import { useApp } from "@/lib/app-context"
-import { Btn, SimpleModal, PageHeader, FieldGroup, cardCls, inputCls } from "@/components/ui-kit"
+import { useApp, type Application } from "@/lib/app-context"
+import { Btn, SimpleModal, PageHeader, FieldGroup, SearchableSelect, cardCls, inputCls } from "@/components/ui-kit"
 import { Users, Plus, Calendar, Heart } from "lucide-react"
 import { handleApiError } from "@/lib/handle-error"
+import { ApplicationDocsModal } from "@/components/application-docs-modal"
 
 export function RpApplicants() {
   const { user, applicants, facilities, createApplicant, submitApplication } = useApp()
@@ -20,6 +21,7 @@ export function RpApplicants() {
   const [applyApplicantId, setApplyApplicantId] = useState<string | null>(null)
   const [selectedFacilityId, setSelectedFacilityId] = useState("")
   const [isApplying, setIsApplying]       = useState(false)
+  const [pendingApplication, setPendingApplication] = useState<Application | null>(null)
 
   const myApplicants = applicants.filter((a) => a.rpId === user?.id)
   const openFacilities = facilities.filter((f) => f.isActive && f.currentOpenings > 0)
@@ -50,8 +52,9 @@ export function RpApplicants() {
     if (!applyApplicantId || !selectedFacilityId) return
     setIsApplying(true)
     try {
-      await submitApplication(selectedFacilityId, applyApplicantId)
+      const application = await submitApplication(selectedFacilityId, applyApplicantId)
       setApplyApplicantId(null)
+      setPendingApplication(application)
     } catch (e) { handleApiError(e) }
     finally { setIsApplying(false) }
   }
@@ -156,29 +159,41 @@ export function RpApplicants() {
         ) : (
           <>
             <FieldGroup label="Select RCF" required>
-              <div className="flex flex-col gap-2 max-h-[280px] overflow-y-auto">
-                {openFacilities.map((f) => (
-                  <button key={f.id} type="button" onClick={() => setSelectedFacilityId(f.id)}
-                    className="rounded-[9px] border-2 p-3 text-left text-[14px] transition-all cursor-pointer font-[inherit]"
-                    style={{ borderColor: selectedFacilityId === f.id ? "#2563eb" : "#e2e8f0", background: selectedFacilityId === f.id ? "#eff6ff" : "#fff" }}>
+              <SearchableSelect
+                items={openFacilities}
+                selected={selectedFacilityId}
+                onSelect={setSelectedFacilityId}
+                getSearchText={f => `${f.name} ${f.address}`}
+                placeholder="Search RCFs…"
+                renderItem={(f) => (
+                  <>
                     <div className="flex items-center justify-between">
                       <span className="font-semibold text-[#0f172a]">{f.name}</span>
                       <span className="text-[12px] font-bold text-[#16a34a]">{f.currentOpenings} open</span>
                     </div>
                     {f.address && <div className="mt-0.5 text-[12px] text-[#64748b]">{f.address}</div>}
-                  </button>
-                ))}
-              </div>
+                  </>
+                )}
+              />
             </FieldGroup>
             <div className="flex justify-end gap-2">
               <Btn variant="secondary" onClick={() => setApplyApplicantId(null)}>Cancel</Btn>
               <Btn disabled={!selectedFacilityId} loading={isApplying} onClick={handleApply}>
-                Submit Application
+                Apply
               </Btn>
             </div>
           </>
         )}
       </SimpleModal>
+
+      <ApplicationDocsModal
+        application={pendingApplication}
+        title={pendingApplication
+          ? `Apply to ${facilities.find(f => f.id === pendingApplication.rcfId)?.name ?? "RCF"}`
+          : ""}
+        isOpen={!!pendingApplication}
+        onClose={() => setPendingApplication(null)}
+      />
     </div>
   )
 }
