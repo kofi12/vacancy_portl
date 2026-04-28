@@ -3,33 +3,20 @@
 import { useState } from "react"
 import { useApp, type Facility, type RcfForm } from "@/lib/app-context"
 import { apiClient } from "@/lib/api-client"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import { Building2, Edit, Clock, CheckCircle2, Loader2, Plus, FileText, Download, Trash2, Upload } from "lucide-react"
+import { Btn, StatusChip, SimpleModal, PageHeader, FieldGroup, cardCls, inputCls } from "@/components/ui-kit"
+import { Building2, FileText, Download, Trash2, Upload, Loader2, Plus, Edit } from "lucide-react"
 import { handleApiError } from "@/lib/handle-error"
 import { downloadFile } from "@/lib/download"
 import { formatDistanceToNow, format } from "date-fns"
 
 export function OwnerFacilities() {
   const { userOrgId, facilities, updateFacilityStatus, createFacility } = useApp()
+
   const [editingFacility, setEditingFacility] = useState<Facility | null>(null)
   const [editIsActive, setEditIsActive] = useState(true)
   const [editOpenings, setEditOpenings] = useState("0")
-  const [showSuccess, setShowSuccess] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  // Forms modal state
   const [formsFacility, setFormsFacility] = useState<Facility | null>(null)
   const [rcfForms, setRcfForms] = useState<RcfForm[]>([])
   const [formsLoading, setFormsLoading] = useState(false)
@@ -37,7 +24,6 @@ export function OwnerFacilities() {
   const [uploadTitle, setUploadTitle] = useState("")
   const [isUploading, setIsUploading] = useState(false)
 
-  // Create RCF modal state
   const [showCreate, setShowCreate] = useState(false)
   const [newName, setNewName] = useState("")
   const [newAddress, setNewAddress] = useState("")
@@ -48,23 +34,19 @@ export function OwnerFacilities() {
 
   const myFacilities = facilities.filter((f) => f.orgId === userOrgId)
 
-  function openEditModal(facility: Facility) {
-    setEditingFacility(facility)
-    setEditIsActive(facility.isActive)
-    setEditOpenings(String(facility.currentOpenings))
+  function openEdit(f: Facility) {
+    setEditingFacility(f)
+    setEditIsActive(f.isActive)
+    setEditOpenings(String(f.currentOpenings))
   }
 
-  async function openFormsModal(facility: Facility) {
-    setFormsFacility(facility)
+  async function openForms(f: Facility) {
+    setFormsFacility(f)
     setFormsLoading(true)
     try {
-      const forms = await apiClient.get<RcfForm[]>(`/rcf-forms/rcf/${facility.id}`)
-      setRcfForms(forms)
-    } catch (e) {
-      handleApiError(e)
-    } finally {
-      setFormsLoading(false)
-    }
+      setRcfForms(await apiClient.get<RcfForm[]>(`/rcf-forms/rcf/${f.id}`))
+    } catch (e) { handleApiError(e) }
+    finally { setFormsLoading(false) }
   }
 
   async function handleUploadForm(e: React.FormEvent) {
@@ -73,353 +55,226 @@ export function OwnerFacilities() {
     setIsUploading(true)
     try {
       const fd = new FormData()
-      fd.append('file', uploadFile)
-      fd.append('rcfId', formsFacility.id)
-      fd.append('title', uploadTitle || uploadFile.name)
-      fd.append('formType', 'CUSTOM')
-      fd.append('contentType', 'PDF')
-      const created = await apiClient.postForm<RcfForm>('/rcf-forms', fd)
-      setRcfForms(prev => [...prev, created])
-      setUploadFile(null)
-      setUploadTitle("")
-    } catch (e) {
-      handleApiError(e)
-    } finally {
-      setIsUploading(false)
-    }
+      fd.append("file", uploadFile)
+      fd.append("rcfId", formsFacility.id)
+      fd.append("title", uploadTitle || uploadFile.name)
+      fd.append("formType", "CUSTOM")
+      fd.append("contentType", "PDF")
+      const created = await apiClient.postForm<RcfForm>("/rcf-forms", fd)
+      setRcfForms((p) => [...p, created])
+      setUploadFile(null); setUploadTitle("")
+    } catch (e) { handleApiError(e) }
+    finally { setIsUploading(false) }
   }
 
-  async function handleDeleteForm(formId: string) {
+  async function handleDeleteForm(id: string) {
     try {
-      await apiClient.delete(`/rcf-forms/${formId}`)
-      setRcfForms(prev => prev.filter(f => f.id !== formId))
-    } catch (e) {
-      handleApiError(e)
-    }
+      await apiClient.delete(`/rcf-forms/${id}`)
+      setRcfForms((p) => p.filter((f) => f.id !== id))
+    } catch (e) { handleApiError(e) }
   }
 
-  async function handleDownloadForm(formId: string, fileName: string) {
+  async function handleDownloadForm(id: string, fileName: string) {
     try {
-      const { url } = await apiClient.get<{ url: string }>(`/rcf-forms/${formId}/download`)
+      const { url } = await apiClient.get<{ url: string }>(`/rcf-forms/${id}/download`)
       await downloadFile(url, fileName)
-    } catch (e) {
-      handleApiError(e)
-    }
+    } catch (e) { handleApiError(e) }
+  }
+
+  async function handleSaveStatus() {
+    if (!editingFacility) return
+    setIsSubmitting(true)
+    try {
+      await updateFacilityStatus(editingFacility.id, editIsActive, parseInt(editOpenings) || 0)
+      setEditingFacility(null)
+    } catch (e) { handleApiError(e) }
+    finally { setIsSubmitting(false) }
   }
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault()
     setIsCreating(true)
     try {
-      await createFacility({
-        name: newName,
-        address: newAddress,
-        phone: newPhone,
-        licensedBeds: parseInt(newBeds),
-        currentOpenings: parseInt(newOpenings) || 0,
-      })
+      await createFacility({ name: newName, address: newAddress, phone: newPhone, licensedBeds: parseInt(newBeds), currentOpenings: parseInt(newOpenings) || 0 })
       setShowCreate(false)
       setNewName(""); setNewAddress(""); setNewPhone(""); setNewBeds(""); setNewOpenings("0")
-    } catch (e) {
-      handleApiError(e)
-    } finally {
-      setIsCreating(false)
-    }
-  }
-
-  async function handleSave() {
-    if (!editingFacility) return
-    setIsSubmitting(true)
-    try {
-      await updateFacilityStatus(editingFacility.id, editIsActive, parseInt(editOpenings) || 0)
-      setEditingFacility(null)
-      setShowSuccess(true)
-      setTimeout(() => setShowSuccess(false), 2500)
-    } catch (e) {
-      handleApiError(e)
-    } finally {
-      setIsSubmitting(false)
-    }
+    } catch (e) { handleApiError(e) }
+    finally { setIsCreating(false) }
   }
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-start justify-between">
-        <div>
-          <h2 className="text-2xl font-semibold text-foreground">My RCFs</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {"Manage vacancy status for your registered residential care facilities."}
-          </p>
-        </div>
-        <Button size="sm" className="rounded-xl" onClick={() => setShowCreate(true)}>
-          <Plus className="mr-2 h-4 w-4" />
-          Add RCF
-        </Button>
-      </div>
+      <PageHeader
+        title="My RCFs"
+        subtitle="Manage vacancy status for your registered residential care facilities."
+        action={
+          <Btn icon={<Plus className="h-4 w-4" />} onClick={() => setShowCreate(true)}>
+            Add RCF
+          </Btn>
+        }
+      />
 
       {myFacilities.length === 0 && (
-        <Card className="rounded-2xl shadow-sm">
-          <CardContent className="flex flex-col items-center justify-center py-16">
-            <Building2 className="mb-3 h-10 w-10 text-muted-foreground" />
-            <p className="text-sm text-muted-foreground">No RCFs yet. Add your first facility above.</p>
-          </CardContent>
-        </Card>
+        <div className={`${cardCls} flex flex-col items-center justify-center py-16`}>
+          <Building2 className="mb-3 h-10 w-10 text-[#94a3b8]" />
+          <p className="text-[14px] text-[#64748b]">No RCFs yet. Add your first facility above.</p>
+        </div>
       )}
 
       <div className="flex flex-col gap-4">
-        {myFacilities.map((facility) => (
-          <Card key={facility.id} className="rounded-2xl shadow-sm">
-            <CardHeader className="pb-3">
-              <div className="flex items-start justify-between">
+        {myFacilities.map((f) => {
+          const statusKey = !f.isActive ? "inactive" : f.currentOpenings > 0 ? "open" : "full"
+          const statusLabel = !f.isActive ? "Inactive" : f.currentOpenings > 0 ? `${f.currentOpenings} Opening${f.currentOpenings !== 1 ? "s" : ""}` : "Full"
+          return (
+            <div key={f.id} className={`${cardCls} p-6`}>
+              <div className="mb-4 flex items-start justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
-                    <Building2 className="h-5 w-5 text-primary" />
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[9px] bg-[#eff6ff]">
+                    <Building2 className="h-5 w-5 text-[#2563eb]" />
                   </div>
-                  <CardTitle className="text-base">{facility.name}</CardTitle>
+                  <div>
+                    <div className="text-[16px] font-bold text-[#0f172a]">{f.name}</div>
+                    {f.address && <div className="mt-0.5 text-[13px] text-[#64748b]">{f.address}</div>}
+                  </div>
                 </div>
-                <Badge
-                  className={
-                    facility.isActive && facility.currentOpenings > 0
-                      ? "rounded-lg bg-success text-success-foreground hover:bg-success/90"
-                      : "rounded-lg bg-muted text-muted-foreground hover:bg-muted/90"
-                  }
-                >
-                  {facility.isActive
-                    ? facility.currentOpenings > 0
-                      ? `${facility.currentOpenings} opening${facility.currentOpenings !== 1 ? "s" : ""}`
-                      : "No Vacancies"
-                    : "Inactive"}
-                </Badge>
+                <StatusChip status={statusKey} label={statusLabel} />
               </div>
-            </CardHeader>
-            <CardContent>
-              <div className="mb-4 grid grid-cols-2 gap-4">
-                <div className="rounded-xl bg-secondary/50 p-3">
-                  <p className="text-xs text-muted-foreground">Licensed Beds</p>
-                  <p className="text-lg font-semibold text-foreground">{facility.licensedBeds}</p>
+
+              <div className="mb-4 grid grid-cols-2 gap-3">
+                <div className="rounded-[10px] bg-[#f8fafc] p-3">
+                  <div className="text-[11px] font-bold uppercase tracking-[.05em] text-[#94a3b8]">Licensed Beds</div>
+                  <div className="mt-1 text-[20px] font-extrabold text-[#0f172a]">{f.licensedBeds}</div>
                 </div>
-                <div className="rounded-xl bg-secondary/50 p-3">
-                  <p className="text-xs text-muted-foreground">Current Openings</p>
-                  <p className="text-lg font-semibold text-success">{facility.currentOpenings}</p>
+                <div className="rounded-[10px] bg-[#f8fafc] p-3">
+                  <div className="text-[11px] font-bold uppercase tracking-[.05em] text-[#94a3b8]">Current Openings</div>
+                  <div className="mt-1 text-[20px] font-extrabold" style={{ color: f.currentOpenings > 0 ? "#16a34a" : "#dc2626" }}>
+                    {f.currentOpenings}
+                  </div>
                 </div>
               </div>
+
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <Clock className="h-3.5 w-3.5" />
-                  {facility.updatedAt ? (
-                    <>
-                      Last updated {formatDistanceToNow(new Date(facility.updatedAt), { addSuffix: true })}
-                      <span className="text-muted-foreground/50">
-                        ({format(new Date(facility.updatedAt), "MMM d, yyyy h:mm a")})
-                      </span>
-                    </>
-                  ) : (
-                    "Never updated"
-                  )}
+                <div className="text-[12px] text-[#94a3b8]">
+                  {f.updatedAt
+                    ? `Updated ${formatDistanceToNow(new Date(f.updatedAt), { addSuffix: true })} (${format(new Date(f.updatedAt), "MMM d, yyyy")})`
+                    : "Never updated"}
                 </div>
                 <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="rounded-xl"
-                    onClick={() => openFormsModal(facility)}
-                  >
-                    <FileText className="mr-2 h-4 w-4" />
+                  <Btn variant="secondary" size="sm" icon={<FileText className="h-4 w-4" />} onClick={() => openForms(f)}>
                     Forms
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="rounded-xl"
-                    onClick={() => openEditModal(facility)}
-                  >
-                    <Edit className="mr-2 h-4 w-4" />
+                  </Btn>
+                  <Btn variant="secondary" size="sm" icon={<Edit className="h-4 w-4" />} onClick={() => openEdit(f)}>
                     Update Status
-                  </Button>
+                  </Btn>
                 </div>
               </div>
-            </CardContent>
-          </Card>
-        ))}
+            </div>
+          )
+        })}
       </div>
 
       {/* Edit Status Modal */}
-      <Dialog open={!!editingFacility} onOpenChange={(open) => !open && setEditingFacility(null)}>
-        <DialogContent className="rounded-2xl sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Update Vacancy Status</DialogTitle>
-            <DialogDescription>
-              {editingFacility?.name} — {"Update the current openings and active status."}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex flex-col gap-4">
-            <div className="flex flex-col gap-2">
-              <Label>Status</Label>
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => setEditIsActive(true)}
-                  className={`flex items-center justify-center gap-2 rounded-xl border-2 p-3 text-sm font-medium transition-colors ${
-                    editIsActive
-                      ? "border-success bg-success/5 text-success"
-                      : "border-border text-muted-foreground hover:border-success/40"
-                  }`}
-                >
-                  <CheckCircle2 className="h-4 w-4" />
-                  Active
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setEditIsActive(false)}
-                  className={`flex items-center justify-center gap-2 rounded-xl border-2 p-3 text-sm font-medium transition-colors ${
-                    !editIsActive
-                      ? "border-muted-foreground bg-muted text-muted-foreground"
-                      : "border-border text-muted-foreground hover:border-muted-foreground/40"
-                  }`}
-                >
-                  Inactive
-                </button>
-              </div>
-            </div>
-
-            {editIsActive && (
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="edit-openings">Current Openings</Label>
-                <Input
-                  id="edit-openings"
-                  type="number"
-                  min="0"
-                  max={editingFacility?.licensedBeds || 10}
-                  className="rounded-xl"
-                  value={editOpenings}
-                  onChange={(e) => setEditOpenings(e.target.value)}
-                />
-              </div>
-            )}
+      <SimpleModal open={!!editingFacility} onClose={() => setEditingFacility(null)} title="Update Vacancy Status" width={440}>
+        <p className="text-[14px] text-[#374151]">
+          <strong>{editingFacility?.name}</strong> — update current openings and active status.
+        </p>
+        <FieldGroup label="Status">
+          <div className="grid grid-cols-2 gap-3">
+            {[{ val: true, label: "Active" }, { val: false, label: "Inactive" }].map(({ val, label }) => (
+              <button key={String(val)} type="button" onClick={() => setEditIsActive(val)}
+                className="cursor-pointer rounded-[9px] border-2 p-3 text-[14px] font-semibold transition-all font-[inherit]"
+                style={{ borderColor: editIsActive === val ? "#2563eb" : "#e2e8f0", background: editIsActive === val ? "#eff6ff" : "#fff", color: editIsActive === val ? "#2563eb" : "#374151" }}>
+                {label}
+              </button>
+            ))}
           </div>
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="outline" className="rounded-xl" onClick={() => setEditingFacility(null)}>
-              Cancel
-            </Button>
-            <Button className="rounded-xl" onClick={handleSave} disabled={isSubmitting}>
-              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Save
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Success Toast */}
-      <Dialog open={showSuccess} onOpenChange={setShowSuccess}>
-        <DialogContent className="rounded-2xl sm:max-w-sm">
-          <div className="flex flex-col items-center gap-3 py-4 text-center">
-            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-success/10">
-              <CheckCircle2 className="h-7 w-7 text-success" />
-            </div>
-            <DialogTitle>Status Updated</DialogTitle>
-            <DialogDescription>
-              {"Vacancy status has been saved."}
-            </DialogDescription>
-          </div>
-        </DialogContent>
-      </Dialog>
+        </FieldGroup>
+        {editIsActive && (
+          <FieldGroup label="Current Openings">
+            <input type="number" min="0" max={editingFacility?.licensedBeds} value={editOpenings}
+              onChange={(e) => setEditOpenings(e.target.value)} className={inputCls} />
+          </FieldGroup>
+        )}
+        <div className="flex justify-end gap-2">
+          <Btn variant="secondary" onClick={() => setEditingFacility(null)}>Cancel</Btn>
+          <Btn loading={isSubmitting} onClick={handleSaveStatus}>Save Changes</Btn>
+        </div>
+      </SimpleModal>
 
       {/* Manage Forms Modal */}
-      <Dialog open={!!formsFacility} onOpenChange={(open) => { if (!open) { setFormsFacility(null); setRcfForms([]) } }}>
-        <DialogContent className="rounded-2xl sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Manage Forms — {formsFacility?.name}</DialogTitle>
-            <DialogDescription>{"Upload PDF templates that RPs must complete for applications."}</DialogDescription>
-          </DialogHeader>
-
-          {/* Existing forms */}
-          <div className="flex flex-col gap-2">
-            {formsLoading ? (
-              <div className="flex items-center justify-center py-6">
-                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+      <SimpleModal
+        open={!!formsFacility}
+        onClose={() => { setFormsFacility(null); setRcfForms([]) }}
+        title={`Forms — ${formsFacility?.name}`}
+        width={520}
+      >
+        <div className="flex flex-col gap-2">
+          {formsLoading ? (
+            <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin text-[#94a3b8]" /></div>
+          ) : rcfForms.length === 0 ? (
+            <p className="py-4 text-center text-[14px] text-[#64748b]">No forms uploaded yet.</p>
+          ) : rcfForms.map((form) => (
+            <div key={form.id} className="flex items-center justify-between rounded-[9px] border border-[#e2e8f0] px-3 py-2">
+              <div className="flex items-center gap-2 text-[14px] text-[#374151]">
+                <FileText className="h-4 w-4 text-[#94a3b8]" />
+                <span className="font-semibold">{form.title}</span>
+                <span className="text-[12px] text-[#94a3b8]">{form.fileName}</span>
               </div>
-            ) : rcfForms.length === 0 ? (
-              <p className="py-4 text-center text-sm text-muted-foreground">No forms uploaded yet.</p>
-            ) : (
-              rcfForms.map(form => (
-                <div key={form.id} className="flex items-center justify-between rounded-xl border px-3 py-2">
-                  <div className="flex items-center gap-2 text-sm">
-                    <FileText className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-medium">{form.title}</span>
-                    <span className="text-xs text-muted-foreground">{form.fileName}</span>
-                  </div>
-                  <div className="flex gap-1">
-                    <Button variant="ghost" size="sm" className="rounded-lg h-8 w-8 p-0" onClick={() => handleDownloadForm(form.id, form.fileName)}>
-                      <Download className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="sm" className="rounded-lg h-8 w-8 p-0 text-destructive hover:text-destructive" onClick={() => handleDeleteForm(form.id)}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
+              <div className="flex gap-1">
+                <button onClick={() => handleDownloadForm(form.id, form.fileName)}
+                  className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-[7px] text-[#64748b] hover:bg-[#f8fafc]">
+                  <Download className="h-4 w-4" />
+                </button>
+                <button onClick={() => handleDeleteForm(form.id)}
+                  className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-[7px] text-[#dc2626] hover:bg-[#fef2f2]">
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
 
-          {/* Upload new form */}
-          <form onSubmit={handleUploadForm} className="flex flex-col gap-3 border-t pt-4">
-            <p className="text-sm font-medium">Upload New Form</p>
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="form-title">Title</Label>
-              <Input id="form-title" className="rounded-xl" placeholder="e.g. Intake Form" value={uploadTitle} onChange={e => setUploadTitle(e.target.value)} required />
-            </div>
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="form-file">PDF File</Label>
-              <Input id="form-file" type="file" accept=".pdf" className="rounded-xl" onChange={e => setUploadFile(e.target.files?.[0] ?? null)} required />
-            </div>
-            <Button type="submit" className="rounded-xl" disabled={isUploading || !uploadFile}>
-              {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
-              Upload Form
-            </Button>
-          </form>
-        </DialogContent>
-      </Dialog>
+        <form onSubmit={handleUploadForm} className="flex flex-col gap-3 border-t border-[#f1f5f9] pt-4">
+          <div className="text-[14px] font-semibold text-[#0f172a]">Upload New Form</div>
+          <FieldGroup label="Title">
+            <input className={inputCls} placeholder="e.g. Intake Form" value={uploadTitle}
+              onChange={(e) => setUploadTitle(e.target.value)} required />
+          </FieldGroup>
+          <FieldGroup label="PDF File">
+            <input type="file" accept=".pdf" className={inputCls} onChange={(e) => setUploadFile(e.target.files?.[0] ?? null)} required />
+          </FieldGroup>
+          <Btn type="submit" loading={isUploading} disabled={!uploadFile} icon={<Upload className="h-4 w-4" />}>
+            Upload Form
+          </Btn>
+        </form>
+      </SimpleModal>
 
       {/* Create RCF Modal */}
-      <Dialog open={showCreate} onOpenChange={(open) => !open && setShowCreate(false)}>
-        <DialogContent className="rounded-2xl sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Add RCF</DialogTitle>
-            <DialogDescription>{"Register a new residential care facility."}</DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleCreate} className="flex flex-col gap-4">
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="rcf-name">Facility Name</Label>
-              <Input id="rcf-name" className="rounded-xl" placeholder="Sunrise Care Home" value={newName} onChange={(e) => setNewName(e.target.value)} required />
-            </div>
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="rcf-address">Address</Label>
-              <Input id="rcf-address" className="rounded-xl" placeholder="123 Main St, Vancouver, BC" value={newAddress} onChange={(e) => setNewAddress(e.target.value)} required />
-            </div>
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="rcf-phone">Phone</Label>
-              <Input id="rcf-phone" className="rounded-xl" placeholder="(555) 000-0000" value={newPhone} onChange={(e) => setNewPhone(e.target.value)} required />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="rcf-beds">Licensed Beds</Label>
-                <Input id="rcf-beds" type="number" min="1" className="rounded-xl" placeholder="10" value={newBeds} onChange={(e) => setNewBeds(e.target.value)} required />
-              </div>
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="rcf-openings">Current Openings</Label>
-                <Input id="rcf-openings" type="number" min="0" className="rounded-xl" placeholder="0" value={newOpenings} onChange={(e) => setNewOpenings(e.target.value)} />
-              </div>
-            </div>
-            <DialogFooter className="gap-2 sm:gap-0">
-              <Button type="button" variant="outline" className="rounded-xl" onClick={() => setShowCreate(false)}>Cancel</Button>
-              <Button type="submit" className="rounded-xl" disabled={isCreating}>
-                {isCreating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Add RCF
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+      <SimpleModal open={showCreate} onClose={() => setShowCreate(false)} title="Add RCF" width={480}>
+        <form onSubmit={handleCreate} className="flex flex-col gap-4">
+          <FieldGroup label="Facility Name" required>
+            <input className={inputCls} placeholder="Sunrise Care Home" value={newName} onChange={(e) => setNewName(e.target.value)} required />
+          </FieldGroup>
+          <FieldGroup label="Address" required>
+            <input className={inputCls} placeholder="123 Main St, San Diego, CA" value={newAddress} onChange={(e) => setNewAddress(e.target.value)} required />
+          </FieldGroup>
+          <FieldGroup label="Phone" required>
+            <input className={inputCls} placeholder="(555) 000-0000" value={newPhone} onChange={(e) => setNewPhone(e.target.value)} required />
+          </FieldGroup>
+          <div className="grid grid-cols-2 gap-3">
+            <FieldGroup label="Licensed Beds" required>
+              <input type="number" min="1" className={inputCls} placeholder="10" value={newBeds} onChange={(e) => setNewBeds(e.target.value)} required />
+            </FieldGroup>
+            <FieldGroup label="Current Openings">
+              <input type="number" min="0" className={inputCls} placeholder="0" value={newOpenings} onChange={(e) => setNewOpenings(e.target.value)} />
+            </FieldGroup>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Btn variant="secondary" type="button" onClick={() => setShowCreate(false)}>Cancel</Btn>
+            <Btn type="submit" loading={isCreating}>Add RCF</Btn>
+          </div>
+        </form>
+      </SimpleModal>
     </div>
   )
 }

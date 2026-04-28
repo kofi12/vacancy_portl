@@ -1,64 +1,47 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+@import "tailwindcss";
+@import "@heroui/react/styles";
+
+@theme {
+  --font-sans: "Plus Jakarta Sans", system-ui, sans-serif;
+
+  --color-brand:        #2563eb;
+  --color-brand-dk:     #1d4ed8;
+  --color-brand-bg:     #eff6ff;
+  --color-brand-bd:     #bfdbfe;
+
+  --color-success:      #16a34a;
+  --color-success-bg:   #f0fdf4;
+  --color-success-bd:   #bbf7d0;
+
+  --color-warning:      #d97706;
+  --color-warning-bg:   #fffbeb;
+  --color-warning-bd:   #fde68a;
+
+  --color-violet:       #7c3aed;
+  --color-violet-bg:    #faf5ff;
+  --color-violet-bd:    #e9d5ff;
+
+  --color-danger:       #dc2626;
+  --color-danger-bg:    #fef2f2;
+  --color-danger-bd:    #fecaca;
+
+  --color-slate:        #64748b;
+  --color-slate-light:  #94a3b8;
+
+  --color-page-bg:      #f8fafc;
+  --color-card:         #ffffff;
+  --color-border:       #f1f5f9;
+  --color-border-2:     #e2e8f0;
+
+  --color-text:         #0f172a;
+  --color-text-mid:     #374151;
+  --color-text-mute:    #64748b;
+}
 
 body {
-  font-family: Arial, Helvetica, sans-serif;
-}
-
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
-  }
-}
-
-@layer base {
-  :root {
-    --background: 210 20% 96%;
-    --foreground: 215 25% 15%;
-    --card: 0 0% 100%;
-    --card-foreground: 215 25% 15%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 215 25% 15%;
-    --primary: 207 70% 45%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 210 15% 93%;
-    --secondary-foreground: 215 25% 20%;
-    --muted: 210 12% 92%;
-    --muted-foreground: 215 10% 48%;
-    --accent: 207 70% 45%;
-    --accent-foreground: 0 0% 100%;
-    --destructive: 0 65% 55%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 210 15% 88%;
-    --input: 210 15% 88%;
-    --ring: 207 70% 45%;
-    --chart-1: 207 70% 45%;
-    --chart-2: 152 55% 42%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
-    --radius: 0.75rem;
-    --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 215 25% 25%;
-    --sidebar-primary: 207 70% 45%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 207 60% 95%;
-    --sidebar-accent-foreground: 207 70% 35%;
-    --sidebar-border: 210 15% 90%;
-    --sidebar-ring: 207 70% 45%;
-    --success: 152 55% 42%;
-    --success-foreground: 0 0% 100%;
-    --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 100%;
-  }
-}
-
-@layer base {
-  * {
-    @apply border-border;
-  }
-  body {
-    @apply bg-background text-foreground;
-  }
+  font-family: var(--font-sans);
+  background-color: var(--color-page-bg);
+  color: var(--color-text);
+  -webkit-font-smoothing: antialiased;
 }

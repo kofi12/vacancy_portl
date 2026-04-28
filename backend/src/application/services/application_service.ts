@@ -10,6 +10,7 @@ import { Application } from "../../domain/entities/application.ts";
 import type {
     CreateApplicationDto,
     SubmitApplicationDto,
+    UpdateApplicationStatusDto,
     ApplicationResponseDto
 } from "../dtos/application_dtos.ts";
 import { ApplicationError, AppErrorCode, NotFoundError, BusinessRuleError, UnexpectedError, ForbiddenError } from "../exceptions/app_errors.ts";
@@ -53,7 +54,7 @@ export class ApplicationService {
             if (application.rpId !== dto.requestingRpId)
                 throw new ForbiddenError(AppErrorCode.NOT_APPLICATION_OWNER, "You do not own this application");
 
-            if (application.status === Status.SUBMITTED)
+            if (application.status !== Status.SUBMITTED)
                 throw new BusinessRuleError(AppErrorCode.INVALID_STATUS_TRANSITION, "Application is already submitted");
 
             const requiredForms = await this.rcfFormRepo.findAllByRcfId(application.rcfId);
@@ -64,8 +65,28 @@ export class ApplicationService {
                     throw new BusinessRuleError(AppErrorCode.DOCUMENTS_INCOMPLETE, `Missing document for form type: ${form.formType}`);
             }
 
-            application.status = Status.SUBMITTED;
-            application.submittedAt = new Date();
+            await this.applicationRepo.update(application);
+            return this.toResponseDto(application);
+        } catch (e) {
+            if (e instanceof ApplicationNotFoundException) throw new NotFoundError(AppErrorCode.APPLICATION_NOT_FOUND, "Application not found", e);
+            if (e instanceof ApplicationError) throw e;
+            throw new UnexpectedError(AppErrorCode.UNEXPECTED_ERROR, "Unexpected error", e);
+        }
+    }
+
+    async updateApplicationStatus(dto: UpdateApplicationStatusDto): Promise<ApplicationResponseDto> {
+        try {
+            const application = await this.applicationRepo.findById(dto.applicationId);
+
+            const terminal = [Status.ACCEPTED, Status.DECLINED];
+            if (terminal.includes(application.status))
+                throw new BusinessRuleError(AppErrorCode.INVALID_STATUS_TRANSITION, `Application is already ${application.status.toLowerCase()}`);
+
+            if (dto.status === Status.DECLINED && !dto.declineReason)
+                throw new BusinessRuleError(AppErrorCode.INVALID_STATUS_TRANSITION, "A decline reason is required");
+
+            application.status = dto.status;
+            application.declineReason = dto.declineReason ?? null;
             await this.applicationRepo.update(application);
             return this.toResponseDto(application);
         } catch (e) {
@@ -157,6 +178,7 @@ export class ApplicationService {
             applicantId: application.applicantId,
             rpId: application.rpId,
             status: application.status,
+            declineReason: application.declineReason,
             submittedAt: application.submittedAt?.toISOString() ?? null,
             createdAt: application.createdAt.toISOString(),
             updatedAt: application.updatedAt?.toISOString() ?? null,

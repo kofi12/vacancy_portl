@@ -13,12 +13,15 @@ export interface User {
   role: UserRole
   phone: string | null
   profileCompleted: boolean
+  title: string | null
+  organization: string | null
 }
 
 export interface Applicant {
   id: string
   rpId: string
   name: string
+  dob: string
   age: number
   careNeeds: string
   createdAt: string
@@ -56,12 +59,15 @@ export interface ApplicationDocument {
   storageKey: string
 }
 
+export type ApplicationStatus = "SUBMITTED" | "IN_REVIEW" | "ACCEPTED" | "DECLINED"
+
 export interface Application {
   id: string
   rcfId: string
   applicantId: string
   rpId: string
-  status: "PENDING" | "SUBMITTED"
+  status: ApplicationStatus
+  declineReason: string | null
   submittedAt: string | null
   createdAt: string
   updatedAt: string | null
@@ -74,6 +80,8 @@ interface ApiUser {
   email: string
   role: UserRole
   phone: string | null
+  title: string | null
+  organization: string | null
 }
 
 interface ApiOrg {
@@ -93,18 +101,21 @@ interface AppContextType {
   logout: () => void
   refreshFacilities: () => Promise<void>
   createOrg: (name: string) => Promise<void>
-  completeProfile: (data: { fullName: string; phone: string }) => Promise<void>
+  completeProfile: (data: { fullName: string; phone: string; title?: string; organization?: string }) => Promise<void>
   createFacility: (data: { name: string; address: string; phone: string; licensedBeds: number; currentOpenings: number }) => Promise<void>
   updateFacilityStatus: (facilityId: string, isActive: boolean, currentOpenings: number) => Promise<void>
   submitApplication: (rcfId: string, applicantId: string) => Promise<void>
-  createApplicant: (name: string, age: number, careNeeds: string) => Promise<Applicant>
-  updateApplicationStatus: (applicationId: string, status: "PENDING" | "SUBMITTED") => Promise<void>
+  createApplicant: (name: string, dob: string, age: number, careNeeds: string) => Promise<Applicant>
+  updateApplicationStatus: (applicationId: string, status: ApplicationStatus, declineReason?: string) => Promise<void>
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined)
 
 function toUser(apiUser: ApiUser): User {
-  return { ...apiUser, profileCompleted: apiUser.phone !== null }
+  return {
+    ...apiUser,
+    profileCompleted: apiUser.phone !== null,
+  }
 }
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
@@ -196,7 +207,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setUserOrgId(org.id)
   }, [])
 
-  const completeProfile = useCallback(async (data: { fullName: string; phone: string }) => {
+  const completeProfile = useCallback(async (data: { fullName: string; phone: string; title?: string; organization?: string }) => {
     if (!user) return
     const updated = await apiClient.patch<ApiUser>(`/users/${user.id}`, data)
     setUser(toUser(updated))
@@ -213,8 +224,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setFacilities(prev => prev.map(f => f.id === facilityId ? updated : f))
   }, [])
 
-  const createApplicant = useCallback(async (name: string, age: number, careNeeds: string): Promise<Applicant> => {
-    const created = await apiClient.post<Applicant>('/applicants', { name, age, careNeeds })
+  const createApplicant = useCallback(async (name: string, dob: string, age: number, careNeeds: string): Promise<Applicant> => {
+    const created = await apiClient.post<Applicant>('/applicants', { name, dob, age, careNeeds })
     setApplicants(prev => [...prev, created])
     return created
   }, [])
@@ -224,8 +235,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setApplications(prev => [...prev, created])
   }, [])
 
-  const updateApplicationStatus = useCallback(async (applicationId: string, status: "PENDING" | "SUBMITTED") => {
-    const updated = await apiClient.patch<Application>(`/applications/${applicationId}/status`, { status })
+  const updateApplicationStatus = useCallback(async (applicationId: string, status: ApplicationStatus, declineReason?: string) => {
+    const body: Record<string, unknown> = { status }
+    if (declineReason !== undefined) body.declineReason = declineReason
+    const updated = await apiClient.patch<Application>(`/applications/${applicationId}/status`, body)
     setApplications(prev => prev.map(a => a.id === applicationId ? updated : a))
   }, [])
 

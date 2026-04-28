@@ -11,11 +11,11 @@ applicantController.use('*', authMiddleware);
 
 // POST / — create a new applicant
 applicantController.post('/', async (c) => {
-    const { name, age, careNeeds } = await c.req.json();
+    const { name, dob, age, careNeeds } = await c.req.json();
     const rpId = c.get('user').id;
 
     try {
-        const result = await applicantService.createApplicant({ rpId, name, age, careNeeds });
+        const result = await applicantService.createApplicant({ rpId, name, dob, age, careNeeds });
         return c.json(result, 201);
     } catch (e) {
         if (e instanceof NotFoundError) return c.json({ code: e.code, message: e.message }, 404);

@@ -62,6 +62,8 @@ export class UserService {
             if (dto.fullName) user.fullName = dto.fullName;
             if (dto.email) user.email = dto.email;
             if (dto.phone) user.phone = dto.phone;
+            if (dto.title !== undefined) user.title = dto.title ?? null;
+            if (dto.organization !== undefined) user.organization = dto.organization ?? null;
             await this.userRepo.update(user);
             return this.toResponseDto(user);
         } catch (e) {
@@ -90,6 +92,8 @@ export class UserService {
             fullName: user.fullName,
             email: user.email,
             phone: user.phone,
+            title: user.title,
+            organization: user.organization,
             createdAt: user.createdAt.toISOString(),
             updatedAt: user.updatedAt?.toISOString() ?? null,
         };

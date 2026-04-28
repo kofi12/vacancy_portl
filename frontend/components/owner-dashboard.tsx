@@ -1,173 +1,150 @@
 "use client"
 
 import { useApp } from "@/lib/app-context"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Building2, Users, Clock, ArrowUpRight } from "lucide-react"
+import { StatusChip, cardCls } from "@/components/ui-kit"
 import { formatDistanceToNow } from "date-fns"
 
-interface OwnerDashboardProps {
-  onNavigate: (view: string) => void
+function StatCard({ label, value, sub, accent, icon }: {
+  label: string; value: React.ReactNode; sub?: string; accent?: string; icon?: string
+}) {
+  return (
+    <div className={`${cardCls} p-6`}>
+      <div className="mb-3 flex items-center justify-between">
+        <span className="text-[13px] font-semibold text-[#64748b]">{label}</span>
+        {icon && <span className="text-lg">{icon}</span>}
+      </div>
+      <div className="text-[32px] font-extrabold leading-none tracking-tight" style={{ color: accent ?? "#0f172a" }}>
+        {value}
+      </div>
+      {sub && <div className="mt-1.5 text-[12px] text-[#94a3b8]">{sub}</div>}
+    </div>
+  )
 }
 
-export function OwnerDashboard({ onNavigate }: OwnerDashboardProps) {
+export function OwnerDashboard({ onNavigate }: { onNavigate: (view: string) => void }) {
   const { user, userOrgId, facilities, applications } = useApp()
 
   const myFacilities = facilities.filter((f) => f.orgId === userOrgId)
-  const myApplications = applications.filter((a) =>
-    myFacilities.some((f) => f.id === a.rcfId)
-  )
-  const pendingApplications = myApplications.filter((a) => a.status === "PENDING")
-  const totalBeds = myFacilities.reduce((sum, f) => sum + f.licensedBeds, 0)
-  const totalOpenings = myFacilities.reduce((sum, f) => sum + f.currentOpenings, 0)
+  const myApps       = applications.filter((a) => myFacilities.some((f) => f.id === a.rcfId))
+  const totalBeds    = myFacilities.reduce((s, f) => s + f.licensedBeds, 0)
+  const totalOpenings= myFacilities.reduce((s, f) => s + f.currentOpenings, 0)
+  const pendingCount = myApps.filter((a) => a.status === "SUBMITTED").length
+  const isFull       = totalOpenings === 0
+
+  const recentApps = [...myApps]
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, 4)
+
+  const statusCounts: Record<string, number> = {
+    SUBMITTED: myApps.filter((a) => a.status === "SUBMITTED").length,
+    IN_REVIEW: myApps.filter((a) => a.status === "IN_REVIEW").length,
+    ACCEPTED:  myApps.filter((a) => a.status === "ACCEPTED").length,
+    DECLINED:  myApps.filter((a) => a.status === "DECLINED").length,
+  }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-7">
       <div>
-        <h2 className="text-2xl font-semibold text-foreground">
-          {"Welcome back, "}{user?.fullName?.split(" ")[0]}
+        <h2 className="m-0 text-[22px] font-extrabold tracking-tight text-[#0f172a]">
+          Good morning ☀️
         </h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {"Here's an overview of your RCFs and pending applications."}
+        <p className="mt-1 text-[14px] text-[#64748b]">
+          {"Here's an overview of "}
+          {myFacilities[0]?.name ?? "your facilities"}.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="rounded-2xl shadow-sm">
-          <CardContent className="flex items-center gap-4 p-5">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10">
-              <Building2 className="h-6 w-6 text-primary" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">My RCFs</p>
-              <p className="text-2xl font-semibold text-foreground">{myFacilities.length}</p>
-            </div>
-          </CardContent>
-        </Card>
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <StatCard label="My Facilities"      value={myFacilities.length} icon="🏥" sub="Total facilities" />
+        <StatCard label="Licensed Beds"      value={totalBeds}           icon="🛏"  sub="Total capacity" />
 
-        <Card className="rounded-2xl shadow-sm">
-          <CardContent className="flex items-center gap-4 p-5">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-success/10">
-              <ArrowUpRight className="h-6 w-6 text-success" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Current Openings</p>
-              <p className="text-2xl font-semibold text-foreground">{totalOpenings} <span className="text-sm font-normal text-muted-foreground">/ {totalBeds}</span></p>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Openings card — inline because it needs a chip */}
+        <div className={`${cardCls} p-6`}>
+          <div className="mb-3 flex items-center justify-between">
+            <span className="text-[13px] font-semibold text-[#64748b]">Current Openings</span>
+            <span className="text-lg">🪟</span>
+          </div>
+          <div className="flex items-end gap-2.5">
+            <span
+              className="text-[32px] font-extrabold leading-none tracking-tight"
+              style={{ color: isFull ? "#dc2626" : "#0f172a" }}
+            >
+              {totalOpenings}
+            </span>
+            <StatusChip status={isFull ? "full" : "open"} />
+          </div>
+          <div className="mt-1.5 text-[12px] text-[#94a3b8]">
+            {isFull ? "No available beds" : `${totalOpenings} bed${totalOpenings !== 1 ? "s" : ""} available`}
+          </div>
+        </div>
 
-        <Card className="rounded-2xl shadow-sm">
-          <CardContent className="flex items-center gap-4 p-5">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-warning/10">
-              <Users className="h-6 w-6 text-warning" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Pending Applications</p>
-              <p className="text-2xl font-semibold text-foreground">{pendingApplications.length}</p>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="rounded-2xl shadow-sm">
-          <CardContent className="flex items-center gap-4 p-5">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-muted">
-              <Clock className="h-6 w-6 text-muted-foreground" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Total Applications</p>
-              <p className="text-2xl font-semibold text-foreground">{myApplications.length}</p>
-            </div>
-          </CardContent>
-        </Card>
+        <StatCard label="Total Applications" value={myApps.length} icon="📋" sub={`${pendingCount} pending`} />
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <Card className="rounded-2xl shadow-sm">
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-base">RCF Status</CardTitle>
-              <button
-                onClick={() => onNavigate("my-facility")}
-                className="text-sm font-medium text-primary hover:underline"
-              >
-                Manage
-              </button>
-            </div>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-3">
-            {myFacilities.map((facility) => (
-              <div
-                key={facility.id}
-                className="flex items-center justify-between rounded-xl border border-border bg-secondary/30 p-4"
-              >
-                <div className="min-w-0 flex-1">
-                  <p className="font-medium text-foreground">{facility.name}</p>
-                  {facility.updatedAt && (
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      Updated {formatDistanceToNow(new Date(facility.updatedAt), { addSuffix: true })}
-                    </p>
-                  )}
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+        {/* Recent Applications */}
+        <div className={`${cardCls} overflow-hidden`}>
+          <div className="flex items-center justify-between border-b border-[#f1f5f9] px-5 py-4">
+            <span className="text-[15px] font-bold text-[#0f172a]">Recent Applications</span>
+            <button
+              onClick={() => onNavigate("interests")}
+              className="cursor-pointer border-none bg-transparent text-[13px] font-semibold text-[#2563eb]"
+            >
+              View all →
+            </button>
+          </div>
+          {recentApps.length === 0 ? (
+            <div className="px-5 py-10 text-center text-[14px] text-[#64748b]">No applications yet.</div>
+          ) : (
+            recentApps.map((a) => {
+              const facility = myFacilities.find((f) => f.id === a.rcfId)
+              return (
+                <div key={a.id} className="flex items-center justify-between border-b border-[#f1f5f9] px-5 py-3">
+                  <div>
+                    <div className="text-[14px] font-semibold text-[#0f172a]">
+                      {facility?.name ?? "Unknown Facility"}
+                    </div>
+                    <div className="mt-0.5 text-[12px] text-[#94a3b8]">
+                      {formatDistanceToNow(new Date(a.createdAt), { addSuffix: true })}
+                    </div>
+                  </div>
+                  <StatusChip status={a.status} />
                 </div>
-                <Badge
-                  className={
-                    facility.isActive && facility.currentOpenings > 0
-                      ? "rounded-lg bg-success text-success-foreground hover:bg-success/90"
-                      : "rounded-lg bg-muted text-muted-foreground hover:bg-muted/90"
-                  }
-                >
-                  {facility.isActive && facility.currentOpenings > 0
-                    ? `${facility.currentOpenings} opening${facility.currentOpenings !== 1 ? "s" : ""}`
-                    : "No Vacancies"}
-                </Badge>
+              )
+            })
+          )}
+        </div>
+
+        {/* Quick Actions + Status Summary */}
+        <div className={`${cardCls} p-6`}>
+          <div className="mb-4 text-[15px] font-bold text-[#0f172a]">Quick Actions</div>
+          <div className="mb-6 flex flex-col gap-2.5">
+            {[
+              { label: "🏥 Update Facility Info", view: "my-facility" },
+              { label: "📋 Review Applications",  view: "interests" },
+              { label: "👤 My Profile",           view: "profile" },
+            ].map(({ label, view }) => (
+              <button
+                key={view}
+                onClick={() => onNavigate(view)}
+                className="w-full cursor-pointer rounded-[9px] border border-[#e2e8f0] bg-[#f8fafc] px-4 py-2 text-left text-[14px] font-semibold text-[#374151] transition-colors hover:bg-[#f1f5f9] font-[inherit]"
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <div className="rounded-[10px] border border-[#f1f5f9] bg-[#f8fafc] p-4">
+            <div className="mb-2.5 text-[12px] font-bold uppercase tracking-[.05em] text-[#94a3b8]">
+              Status Summary
+            </div>
+            {Object.entries(statusCounts).map(([status, count]) => (
+              <div key={status} className="mb-2 flex items-center justify-between">
+                <StatusChip status={status} />
+                <span className="text-[13px] font-bold text-[#374151]">{count}</span>
               </div>
             ))}
-          </CardContent>
-        </Card>
-
-        <Card className="rounded-2xl shadow-sm">
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-base">Recent Applications</CardTitle>
-              <button
-                onClick={() => onNavigate("interests")}
-                className="text-sm font-medium text-primary hover:underline"
-              >
-                View All
-              </button>
-            </div>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-3">
-            {myApplications.length === 0 ? (
-              <p className="py-8 text-center text-sm text-muted-foreground">No applications yet.</p>
-            ) : (
-              myApplications.slice(0, 3).map((application) => (
-                <div
-                  key={application.id}
-                  className="flex items-center justify-between rounded-xl border border-border bg-secondary/30 p-4"
-                >
-                  <div className="min-w-0 flex-1">
-                    <p className="font-medium text-foreground">Applicant {application.applicantId}</p>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {application.submittedAt
-                        ? formatDistanceToNow(new Date(application.submittedAt), { addSuffix: true })
-                        : formatDistanceToNow(new Date(application.createdAt), { addSuffix: true })}
-                    </p>
-                  </div>
-                  {application.status === "SUBMITTED" ? (
-                    <Badge variant="outline" className="rounded-lg border-success text-success">
-                      SUBMITTED
-                    </Badge>
-                  ) : (
-                    <Badge className="rounded-lg bg-warning text-warning-foreground hover:bg-warning/90">
-                      PENDING
-                    </Badge>
-                  )}
-                </div>
-              ))
-            )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     </div>
   )

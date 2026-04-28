@@ -1,10 +1,10 @@
 'use client'
 
-import { useEffect } from 'react'
+import { Suspense, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { storeToken, decodeToken } from '@/lib/auth'
 
-export default function AuthCallbackPage() {
+function AuthCallbackInner() {
   const router = useRouter()
   const searchParams = useSearchParams()
 
@@ -24,8 +24,16 @@ export default function AuthCallbackPage() {
   }, [router, searchParams])
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <p className="text-sm text-muted-foreground">Signing you in…</p>
+    <div className="flex min-h-screen items-center justify-center">
+      <p className="text-sm text-[--color-text-mute]">Signing you in…</p>
     </div>
+  )
+}
+
+export default function AuthCallbackPage() {
+  return (
+    <Suspense>
+      <AuthCallbackInner />
+    </Suspense>
   )
 }

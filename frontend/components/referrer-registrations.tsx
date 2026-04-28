@@ -1,246 +1,297 @@
 "use client"
 
-import { useState } from "react"
-import { useApp, type Application, type RcfForm, type ApplicationDocument } from "@/lib/app-context"
+import { useState, useEffect } from "react"
+import { useApp, type Application, type RcfForm, type ApplicationDocument, type Facility, type Applicant } from "@/lib/app-context"
 import { apiClient } from "@/lib/api-client"
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import { Btn, StatusChip, SimpleModal, PageHeader, FieldGroup, cardCls, inputCls } from "@/components/ui-kit"
+import { Building2, ChevronDown, ChevronUp, Download, Upload, FileText, Loader2, Trash2, ClipboardList, Plus } from "lucide-react"
 import { handleApiError } from "@/lib/handle-error"
 import { downloadFile } from "@/lib/download"
-import {
-  ClipboardList,
-  Clock,
-  CheckCircle2,
-  Building2,
-  ChevronDown,
-  ChevronUp,
-  Download,
-  Upload,
-  FileText,
-  Loader2,
-  Trash2,
-} from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 
+type AppStatus = Application["status"]
+
+const STATUS_LABEL: Record<AppStatus, string> = {
+  SUBMITTED: "Submitted", IN_REVIEW: "In Review", ACCEPTED: "Accepted", DECLINED: "Declined",
+}
+
 export function ReferrerRegistrations() {
-  const { user, applications, applicants, facilities } = useApp()
+  const { user, applications, applicants, facilities, submitApplication } = useApp()
   const [expanded, setExpanded] = useState<string | null>(null)
 
-  const myApplications = applications
+  const [showNew, setShowNew]               = useState(false)
+  const [selectedApplicantId, setSelectedApplicantId] = useState("")
+  const [selectedFacilityId, setSelectedFacilityId]   = useState("")
+  const [isSubmitting, setIsSubmitting]     = useState(false)
+
+  const myApps = applications
     .filter((a) => a.rpId === user?.id)
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
 
+  const myApplicants = applicants.filter((a) => a.rpId === user?.id)
+  const openFacilities = facilities.filter((f) => f.isActive && f.currentOpenings > 0)
+
+  function openNew() {
+    setSelectedApplicantId(myApplicants[0]?.id ?? "")
+    setSelectedFacilityId(openFacilities[0]?.id ?? "")
+    setShowNew(true)
+  }
+
+  async function handleSubmit() {
+    if (!selectedApplicantId || !selectedFacilityId) return
+    setIsSubmitting(true)
+    try {
+      await submitApplication(selectedFacilityId, selectedApplicantId)
+      setShowNew(false)
+    } catch (e) { handleApiError(e) }
+    finally { setIsSubmitting(false) }
+  }
+
+  const canSubmit = !!selectedApplicantId && !!selectedFacilityId
+
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h2 className="text-2xl font-semibold text-foreground">My Applications</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {"Track your applications and upload required documents."}
-        </p>
-      </div>
+      <PageHeader
+        title="My Applications"
+        subtitle={`${myApps.length} application${myApps.length !== 1 ? "s" : ""} submitted`}
+        action={
+          <Btn icon={<Plus className="h-4 w-4" />} onClick={openNew}>
+            New Application
+          </Btn>
+        }
+      />
 
-      {myApplications.length === 0 ? (
-        <Card className="rounded-2xl shadow-sm">
-          <CardContent className="flex flex-col items-center justify-center py-16">
-            <ClipboardList className="mb-3 h-10 w-10 text-muted-foreground" />
-            <p className="text-sm text-muted-foreground">{"You haven't submitted any applications yet."}</p>
-            <p className="mt-1 text-xs text-muted-foreground">{"Browse RCFs and apply on behalf of your applicants."}</p>
-          </CardContent>
-        </Card>
+      {myApps.length === 0 ? (
+        <div className={`${cardCls} flex flex-col items-center justify-center py-16`}>
+          <ClipboardList className="mb-3 h-10 w-10 text-[#94a3b8]" />
+          <p className="text-[14px] text-[#64748b]">{"You haven't submitted any applications yet."}</p>
+          <p className="mt-1 text-[13px] text-[#94a3b8]">Click "New Application" to get started.</p>
+        </div>
       ) : (
-        <div className="flex flex-col gap-4">
-          {myApplications.map((application) => {
-            const facility = facilities.find((f) => f.id === application.rcfId)
-            const applicant = applicants.find((a) => a.id === application.applicantId)
-            const isExpanded = expanded === application.id
+        <div className={`${cardCls} overflow-hidden`}>
+          {myApps.map((app, i) => {
+            const facility  = facilities.find((f) => f.id === app.rcfId)
+            const applicant = applicants.find((a) => a.id === app.applicantId)
+            const isLast    = i === myApps.length - 1
+            const isOpen    = expanded === app.id
+
             return (
-              <Card key={application.id} className="rounded-2xl shadow-sm">
-                <CardContent className="p-5">
-                  <div className="mb-3 flex items-start justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
-                        <Building2 className="h-5 w-5 text-primary" />
-                      </div>
-                      <div>
-                        <h3 className="font-medium text-foreground">{facility?.name ?? application.rcfId}</h3>
-                        {applicant && (
-                          <p className="text-sm text-muted-foreground">
-                            {"For "}{applicant.name}{" (age "}{applicant.age}{")"}
-                          </p>
-                        )}
-                      </div>
+              <div key={app.id} className={isLast ? "" : "border-b border-[#f1f5f9]"}>
+                <div className="flex items-center justify-between px-5 py-4">
+                  <div className="flex min-w-0 flex-1 items-center gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[9px] bg-[#eff6ff]">
+                      <Building2 className="h-5 w-5 text-[#2563eb]" />
                     </div>
-                    <div className="flex items-center gap-2">
-                      {application.status === "SUBMITTED" ? (
-                        <Badge variant="outline" className="rounded-lg border-success text-success">
-                          <CheckCircle2 className="mr-1 h-3 w-3" />
-                          SUBMITTED
-                        </Badge>
-                      ) : (
-                        <Badge variant="outline" className="rounded-lg">
-                          <Clock className="mr-1 h-3 w-3" />
-                          PENDING
-                        </Badge>
+                    <div className="min-w-0">
+                      <div className="text-[14px] font-semibold text-[#0f172a]">
+                        {facility?.name ?? app.rcfId}
+                      </div>
+                      {applicant && (
+                        <div className="mt-0.5 text-[12px] text-[#64748b]">
+                          For {applicant.name} (age {applicant.age})
+                        </div>
                       )}
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="rounded-xl h-8 w-8 p-0"
-                        onClick={() => setExpanded(isExpanded ? null : application.id)}
-                      >
-                        {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                      </Button>
+                      <div className="mt-0.5 text-[12px] text-[#94a3b8]">
+                        {app.submittedAt
+                          ? `Submitted ${formatDistanceToNow(new Date(app.submittedAt), { addSuffix: true })}`
+                          : `Created ${formatDistanceToNow(new Date(app.createdAt), { addSuffix: true })}`}
+                      </div>
+                      {app.status === "DECLINED" && app.declineReason && (
+                        <div className="mt-1 text-[12px] italic text-[#dc2626]">
+                          Declined: {app.declineReason}
+                        </div>
+                      )}
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <Clock className="h-3.5 w-3.5" />
-                    {application.submittedAt
-                      ? `Submitted ${formatDistanceToNow(new Date(application.submittedAt), { addSuffix: true })}`
-                      : `Created ${formatDistanceToNow(new Date(application.createdAt), { addSuffix: true })}`}
+                  <div className="ml-3 flex shrink-0 items-center gap-2">
+                    <StatusChip status={app.status} label={STATUS_LABEL[app.status]} />
+                    <button onClick={() => setExpanded(isOpen ? null : app.id)}
+                      className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-[7px] text-[#64748b] hover:bg-[#f8fafc]">
+                      {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                    </button>
                   </div>
+                </div>
 
-                  {isExpanded && (
-                    <ApplicationDocs
-                      application={application}
-                      rcfId={application.rcfId}
-                    />
-                  )}
-                </CardContent>
-              </Card>
+                {isOpen && (
+                  <AppDocs application={app} rcfId={app.rcfId} />
+                )}
+              </div>
             )
           })}
         </div>
       )}
+
+      {/* New Application Modal */}
+      <SimpleModal open={showNew} onClose={() => setShowNew(false)} title="New Application" width={500}>
+        {myApplicants.length === 0 ? (
+          <p className="text-[14px] text-[#64748b]">
+            You have no applicants yet. Go to the <strong>Applicants</strong> page to create one first.
+          </p>
+        ) : (
+          <>
+            <FieldGroup label="Select Applicant" required>
+              <div className="flex flex-col gap-2 max-h-[180px] overflow-y-auto">
+                {myApplicants.map((a) => (
+                  <button key={a.id} type="button" onClick={() => setSelectedApplicantId(a.id)}
+                    className="rounded-[9px] border-2 p-3 text-left text-[14px] transition-all cursor-pointer font-[inherit]"
+                    style={{ borderColor: selectedApplicantId === a.id ? "#2563eb" : "#e2e8f0", background: selectedApplicantId === a.id ? "#eff6ff" : "#fff" }}>
+                    <span className="font-semibold text-[#0f172a]">{a.name}</span>
+                    <span className="ml-2 text-[12px] text-[#64748b]">Age {a.age} — {a.careNeeds}</span>
+                  </button>
+                ))}
+              </div>
+            </FieldGroup>
+
+            <FieldGroup label="Select RCF" required>
+              {openFacilities.length === 0 ? (
+                <p className="text-[13px] text-[#94a3b8]">No facilities with vacancies available right now.</p>
+              ) : (
+                <div className="flex flex-col gap-2 max-h-[200px] overflow-y-auto">
+                  {openFacilities.map((f) => (
+                    <button key={f.id} type="button" onClick={() => setSelectedFacilityId(f.id)}
+                      className="rounded-[9px] border-2 p-3 text-left text-[14px] transition-all cursor-pointer font-[inherit]"
+                      style={{ borderColor: selectedFacilityId === f.id ? "#2563eb" : "#e2e8f0", background: selectedFacilityId === f.id ? "#eff6ff" : "#fff" }}>
+                      <span className="font-semibold text-[#0f172a]">{f.name}</span>
+                      <span className="ml-2 text-[12px] text-[#16a34a] font-semibold">{f.currentOpenings} opening{f.currentOpenings !== 1 ? "s" : ""}</span>
+                      {f.address && <div className="mt-0.5 text-[12px] text-[#64748b]">{f.address}</div>}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </FieldGroup>
+
+            <div className="flex justify-end gap-2">
+              <Btn variant="secondary" onClick={() => setShowNew(false)}>Cancel</Btn>
+              <Btn disabled={!canSubmit || openFacilities.length === 0} loading={isSubmitting} onClick={handleSubmit}>
+                Submit Application
+              </Btn>
+            </div>
+          </>
+        )}
+        {myApplicants.length === 0 && (
+          <div className="flex justify-end">
+            <Btn variant="secondary" onClick={() => setShowNew(false)}>Close</Btn>
+          </div>
+        )}
+      </SimpleModal>
     </div>
   )
 }
 
-function ApplicationDocs({ application, rcfId }: { application: Application; rcfId: string }) {
-  const [rcfForms, setRcfForms] = useState<RcfForm[] | null>(null)
-  const [docs, setDocs] = useState<ApplicationDocument[] | null>(null)
-  const [loading, setLoading] = useState(false)
+function AppDocs({ application, rcfId }: { application: Application; rcfId: string }) {
+  const [rcfForms, setRcfForms] = useState<RcfForm[]>([])
+  const [docs, setDocs]         = useState<ApplicationDocument[]>([])
+  const [loading, setLoading]   = useState(true)
   const [uploadFile, setUploadFile] = useState<File | null>(null)
   const [isUploading, setIsUploading] = useState(false)
 
-  // Lazy-load on first expand
-  useState(() => {
-    let cancelled = false
-    async function load() {
-      setLoading(true)
-      try {
-        const [forms, appDocs] = await Promise.all([
-          apiClient.get<RcfForm[]>(`/rcf-forms/rcf/${rcfId}`),
-          apiClient.get<ApplicationDocument[]>(`/application-documents/application/${application.id}`),
-        ])
-        if (!cancelled) { setRcfForms(forms); setDocs(appDocs) }
-      } catch (e) {
-        handleApiError(e)
-      } finally {
-        if (!cancelled) setLoading(false)
-      }
-    }
-    load()
-    return () => { cancelled = true }
-  })
+  const canEdit = application.status === "SUBMITTED"
 
-  async function handleDownload(formId: string, fileName: string) {
+  useEffect(() => {
+    let cancelled = false
+    Promise.all([
+      apiClient.get<RcfForm[]>(`/rcf-forms/rcf/${rcfId}`),
+      apiClient.get<ApplicationDocument[]>(`/application-documents/application/${application.id}`),
+    ]).then(([forms, appDocs]) => {
+      if (!cancelled) { setRcfForms(forms); setDocs(appDocs) }
+    }).catch(handleApiError)
+     .finally(() => { if (!cancelled) setLoading(false) })
+    return () => { cancelled = true }
+  }, [application.id, rcfId])
+
+  async function handleDownloadForm(id: string, fileName: string) {
     try {
-      const { url } = await apiClient.get<{ url: string }>(`/rcf-forms/${formId}/download`)
+      const { url } = await apiClient.get<{ url: string }>(`/rcf-forms/${id}/download`)
       await downloadFile(url, fileName)
     } catch (e) { handleApiError(e) }
   }
 
-  async function handleUploadDoc(e: React.FormEvent) {
+  async function handleUpload(e: React.FormEvent) {
     e.preventDefault()
     if (!uploadFile) return
     setIsUploading(true)
     try {
       const fd = new FormData()
-      fd.append('file', uploadFile)
-      fd.append('applicationId', application.id)
-      fd.append('type', 'CUSTOM')
-      fd.append('contentType', 'PDF')
-      const created = await apiClient.postForm<ApplicationDocument>('/application-documents', fd)
-      setDocs(prev => [...(prev ?? []), created])
+      fd.append("file", uploadFile)
+      fd.append("applicationId", application.id)
+      fd.append("type", "CUSTOM")
+      fd.append("contentType", "PDF")
+      const created = await apiClient.postForm<ApplicationDocument>("/application-documents", fd)
+      setDocs((p) => [...p, created])
       setUploadFile(null)
-      const input = document.getElementById(`doc-file-${application.id}`) as HTMLInputElement
-      if (input) input.value = ''
+      const inp = document.getElementById(`doc-file-${application.id}`) as HTMLInputElement
+      if (inp) inp.value = ""
     } catch (e) { handleApiError(e) }
     finally { setIsUploading(false) }
   }
 
-  async function handleDeleteDoc(docId: string) {
+  async function handleDelete(docId: string) {
     try {
       await apiClient.delete(`/application-documents/${docId}`)
-      setDocs(prev => (prev ?? []).filter(d => d.id !== docId))
+      setDocs((p) => p.filter((d) => d.id !== docId))
     } catch (e) { handleApiError(e) }
   }
 
-  async function handleDownloadDoc(docId: string, fileName: string) {
+  async function handleDownloadDoc(id: string, fileName: string) {
     try {
-      const { url } = await apiClient.get<{ url: string }>(`/application-documents/${docId}/download`)
+      const { url } = await apiClient.get<{ url: string }>(`/application-documents/${id}/download`)
       await downloadFile(url, fileName)
     } catch (e) { handleApiError(e) }
   }
 
   if (loading) {
     return (
-      <div className="mt-4 flex items-center justify-center py-4 border-t">
-        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+      <div className="flex justify-center border-t border-[#f1f5f9] bg-[#f8fafc] py-6">
+        <Loader2 className="h-5 w-5 animate-spin text-[#94a3b8]" />
       </div>
     )
   }
 
   return (
-    <div className="mt-4 flex flex-col gap-4 border-t pt-4">
-      {/* Required forms to download */}
+    <div className="flex flex-col gap-4 border-t border-[#f1f5f9] bg-[#f8fafc] px-5 py-4">
       <div>
-        <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">Required Forms</p>
-        {rcfForms && rcfForms.length === 0 ? (
-          <p className="text-xs text-muted-foreground">No forms required for this RCF.</p>
+        <div className="mb-2 text-[11px] font-bold uppercase tracking-[.05em] text-[#94a3b8]">Required Forms</div>
+        {rcfForms.length === 0 ? (
+          <p className="text-[13px] text-[#94a3b8]">No forms required for this RCF.</p>
         ) : (
           <div className="flex flex-col gap-1.5">
-            {(rcfForms ?? []).map(form => (
-              <div key={form.id} className="flex items-center justify-between rounded-lg border px-3 py-2">
-                <div className="flex items-center gap-2 text-sm">
-                  <FileText className="h-4 w-4 text-muted-foreground" />
-                  <span>{form.title}</span>
+            {rcfForms.map((form) => (
+              <div key={form.id} className="flex items-center justify-between rounded-[9px] border border-[#e2e8f0] bg-white px-3 py-2">
+                <div className="flex items-center gap-2 text-[14px] text-[#374151]">
+                  <FileText className="h-4 w-4 text-[#94a3b8]" />{form.title}
                 </div>
-                <Button variant="ghost" size="sm" className="h-8 rounded-lg gap-1.5" onClick={() => handleDownload(form.id, form.fileName)}>
-                  <Download className="h-3.5 w-3.5" />
-                  Download
-                </Button>
+                <button onClick={() => handleDownloadForm(form.id, form.fileName)}
+                  className="flex items-center gap-1 text-[13px] font-semibold text-[#2563eb] cursor-pointer border-none bg-transparent">
+                  <Download className="h-3.5 w-3.5" /> Download
+                </button>
               </div>
             ))}
           </div>
         )}
       </div>
 
-      {/* Uploaded documents */}
       <div>
-        <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">Uploaded Documents</p>
-        {docs && docs.length === 0 ? (
-          <p className="text-xs text-muted-foreground">No documents uploaded yet.</p>
+        <div className="mb-2 text-[11px] font-bold uppercase tracking-[.05em] text-[#94a3b8]">Uploaded Documents</div>
+        {docs.length === 0 ? (
+          <p className="text-[13px] text-[#94a3b8]">No documents uploaded yet.</p>
         ) : (
           <div className="flex flex-col gap-1.5">
-            {(docs ?? []).map(doc => (
-              <div key={doc.id} className="flex items-center justify-between rounded-lg border px-3 py-2">
-                <div className="flex items-center gap-2 text-sm">
-                  <FileText className="h-4 w-4 text-muted-foreground" />
-                  <span>{doc.originalFileName}</span>
+            {docs.map((doc) => (
+              <div key={doc.id} className="flex items-center justify-between rounded-[9px] border border-[#e2e8f0] bg-white px-3 py-2">
+                <div className="flex items-center gap-2 text-[14px] text-[#374151]">
+                  <FileText className="h-4 w-4 text-[#94a3b8]" />{doc.originalFileName}
                 </div>
                 <div className="flex gap-1">
-                  <Button variant="ghost" size="sm" className="h-8 w-8 rounded-lg p-0" onClick={() => handleDownloadDoc(doc.id, doc.originalFileName)}>
+                  <button onClick={() => handleDownloadDoc(doc.id, doc.originalFileName)}
+                    className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-[7px] text-[#64748b] hover:bg-[#f1f5f9]">
                     <Download className="h-3.5 w-3.5" />
-                  </Button>
-                  {application.status === "PENDING" && (
-                    <Button variant="ghost" size="sm" className="h-8 w-8 rounded-lg p-0 text-destructive hover:text-destructive" onClick={() => handleDeleteDoc(doc.id)}>
+                  </button>
+                  {canEdit && (
+                    <button onClick={() => handleDelete(doc.id)}
+                      className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-[7px] text-[#dc2626] hover:bg-[#fef2f2]">
                       <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
+                    </button>
                   )}
                 </div>
               </div>
@@ -249,23 +300,19 @@ function ApplicationDocs({ application, rcfId }: { application: Application; rcf
         )}
       </div>
 
-      {/* Upload a document */}
-      {application.status === "PENDING" && (
-        <form onSubmit={handleUploadDoc} className="flex items-end gap-2 border-t pt-3">
+      {canEdit && (
+        <form onSubmit={handleUpload} className="flex items-end gap-2 border-t border-[#e2e8f0] pt-3">
           <div className="flex-1">
-            <Label htmlFor={`doc-file-${application.id}`} className="mb-1 text-xs">Upload completed form</Label>
-            <Input
-              id={`doc-file-${application.id}`}
-              type="file"
-              accept=".pdf"
-              className="rounded-xl"
-              onChange={e => setUploadFile(e.target.files?.[0] ?? null)}
-              required
-            />
+            <label htmlFor={`doc-file-${application.id}`} className="mb-1 block text-[12px] text-[#94a3b8]">
+              Upload completed form
+            </label>
+            <input id={`doc-file-${application.id}`} type="file" accept=".pdf" className={inputCls}
+              onChange={(e) => setUploadFile(e.target.files?.[0] ?? null)} required />
           </div>
-          <Button type="submit" size="sm" className="rounded-xl shrink-0" disabled={isUploading || !uploadFile}>
+          <button type="submit" disabled={isUploading || !uploadFile}
+            className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-[9px] bg-[#2563eb] text-white hover:bg-[#1d4ed8] disabled:opacity-50">
             {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-          </Button>
+          </button>
         </form>
       )}
     </div>

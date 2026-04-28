@@ -3,5 +3,6 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 COPY . .
-EXPOSE 3000
+RUN npx prisma generate
+EXPOSE 3001
 CMD ["npx", "tsx", "src/index.ts"]

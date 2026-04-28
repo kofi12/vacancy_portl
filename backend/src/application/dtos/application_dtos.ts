@@ -11,12 +11,19 @@ export interface SubmitApplicationDto {
     requestingRpId: string;
 }
 
+export interface UpdateApplicationStatusDto {
+    applicationId: string;
+    status: Status;
+    declineReason?: string;
+}
+
 export interface ApplicationResponseDto {
     id: string;
     rcfId: string;
     applicantId: string;
     rpId: string;
     status: Status;
+    declineReason: string | null;
     submittedAt: string | null;
     createdAt: string;
     updatedAt: string | null;

@@ -18,6 +18,7 @@ import {
   LogOut,
   Search,
   ClipboardList,
+  Settings,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -36,12 +37,16 @@ export function MobileHeader({ activeView, onNavigate, open, onOpenChange }: Mob
     { id: "my-facility", label: "My RCFs", icon: Building2 },
     { id: "interests", label: "Applications", icon: Users },
     { id: "profile", label: "Profile", icon: UserCircle },
+    { id: "settings", label: "Settings", icon: Settings },
   ]
 
   const rpNavItems = [
-    { id: "facilities", label: "Find RCFs", icon: Search },
-    { id: "my-interests", label: "My Applications", icon: ClipboardList },
-    { id: "profile", label: "Profile", icon: UserCircle },
+    { id: "rp-dashboard",  label: "Dashboard",       icon: LayoutDashboard },
+    { id: "facilities",    label: "RCFs",             icon: Search },
+    { id: "applicants",    label: "Applicants",       icon: Users },
+    { id: "my-interests",  label: "My Applications",  icon: ClipboardList },
+    { id: "profile",       label: "Profile",          icon: UserCircle },
+    { id: "settings",      label: "Settings",         icon: Settings },
   ]
 
   const navItems = user?.role === "OWNER" ? ownerNavItems : rpNavItems

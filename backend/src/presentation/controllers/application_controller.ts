@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { applicationService } from '../../infrastructure/composition_root.ts';
 import { Role } from '../../domain/entities/user.ts';
+import { Status } from '../../domain/entities/application.ts';
 import { authMiddleware } from '../middleware/auth_middleware.ts';
 import type { AuthEnv } from '../middleware/auth_middleware.ts';
 import { BusinessRuleError, ForbiddenError, NotFoundError } from '../../application/exceptions/app_errors.ts';
@@ -35,6 +36,31 @@ applicationController.post('/:id/submit', async (c) => {
     } catch (e) {
         if (e instanceof NotFoundError) return c.json({ code: e.code, message: e.message }, 404);
         if (e instanceof ForbiddenError) return c.json({ code: e.code, message: e.message }, 403);
+        if (e instanceof BusinessRuleError) return c.json({ code: e.code, message: e.message }, 422);
+        return c.json({ message: 'Internal server error' }, 500);
+    }
+});
+
+// PATCH /:id/status — update application status (owner only)
+applicationController.patch('/:id/status', async (c) => {
+    const user = c.get('user');
+    if (user.role !== Role.OWNER && user.role !== Role.ADMIN) {
+        return c.json({ message: 'Forbidden' }, 403);
+    }
+
+    const applicationId = c.req.param('id');
+    const { status, declineReason } = await c.req.json();
+
+    const validStatuses = [Status.IN_REVIEW, Status.ACCEPTED, Status.DECLINED];
+    if (!validStatuses.includes(status)) {
+        return c.json({ message: `Invalid status. Must be one of: ${validStatuses.join(', ')}` }, 422);
+    }
+
+    try {
+        const result = await applicationService.updateApplicationStatus({ applicationId, status, declineReason });
+        return c.json(result);
+    } catch (e) {
+        if (e instanceof NotFoundError) return c.json({ code: e.code, message: e.message }, 404);
         if (e instanceof BusinessRuleError) return c.json({ code: e.code, message: e.message }, 422);
         return c.json({ message: 'Internal server error' }, 500);
     }

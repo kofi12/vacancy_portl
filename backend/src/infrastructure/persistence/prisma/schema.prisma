@@ -18,6 +18,8 @@ model User {
   fullName     String
   email        String        @unique
   phone        String?
+  title        String?
+  organization String?
   authProvider String?
   authSubject  String?
   createdAt    DateTime      @default(now())
@@ -69,6 +71,7 @@ model Applicant {
   rp           User          @relation(fields: [rpId], references: [id])
   rpId         String
   name         String
+  dob          String
   age          Int
   careNeeds    String
   createdAt    DateTime      @default(now())
@@ -85,6 +88,7 @@ model Application {
   rp                  User                  @relation(fields: [rpId], references: [id])
   rpId                String
   status              Status
+  declineReason       String?
   submittedAt         DateTime?
   createdAt           DateTime              @default(now())
   updatedAt           DateTime              @updatedAt
@@ -122,5 +126,7 @@ enum ContentType {
 
 enum Status {
   SUBMITTED
-  PENDING
+  IN_REVIEW
+  ACCEPTED
+  DECLINED
 }

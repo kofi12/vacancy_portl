@@ -10,6 +10,7 @@ export class ApplicationMapper {
         applicantId,
         rpId,
         status,
+        declineReason,
         submittedAt,
         createdAt,
         updatedAt,
@@ -20,6 +21,7 @@ export class ApplicationMapper {
             applicantId,
             rpId,
             status as unknown as Status,
+            declineReason,
             submittedAt,
             createdAt,
             updatedAt,
@@ -33,6 +35,7 @@ export class ApplicationMapper {
             applicantId: application.applicantId,
             rpId: application.rpId,
             status: application.status as unknown as PrismaStatus,
+            declineReason: application.declineReason,
             submittedAt: application.submittedAt,
             createdAt: application.createdAt,
         };

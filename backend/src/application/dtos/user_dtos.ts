@@ -19,6 +19,8 @@ export interface UpdateUserDto {
     fullName?: string;
     email?: string;
     phone?: string;
+    title?: string;
+    organization?: string;
 }
 
 export interface UserResponseDto {
@@ -27,6 +29,8 @@ export interface UserResponseDto {
     fullName: string;
     email: string;
     phone: string | null;
+    title: string | null;
+    organization: string | null;
     createdAt: string;
     updatedAt: string | null;
 }

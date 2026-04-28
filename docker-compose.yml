@@ -18,13 +18,27 @@ services:
   backend:
     build: ./backend
     ports:
-      - "3000:3000"
+      - "3001:3001"
+    env_file:
+      - ./backend/.env
     environment:
       DATABASE_URL: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}"
+      GOOGLE_APPLICATION_CREDENTIALS: /app/gcs-key.json
+    volumes:
+      - ./backend/vacancy-portal-437916-da9f6cebdcd5.json:/app/gcs-key.json:ro
     depends_on:
       postgres:
         condition: service_healthy
     command: sh -c "npx prisma migrate deploy && npx tsx src/index.ts"
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: "http://localhost:3001"
+    depends_on:
+      - backend
 
 volumes:
   postgres_data:

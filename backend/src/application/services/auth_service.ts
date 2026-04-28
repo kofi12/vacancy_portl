@@ -66,6 +66,8 @@ export class AuthService {
             fullName: user.fullName,
             email: user.email,
             phone: user.phone,
+            title: user.title,
+            organization: user.organization,
             createdAt: user.createdAt.toISOString(),
             updatedAt: user.updatedAt ? user.updatedAt.toISOString() : null,
         };
