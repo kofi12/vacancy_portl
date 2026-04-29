@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { AppProvider, useApp } from "@/lib/app-context"
 import { LoginScreen } from "@/components/login-screen"
 import { TopNav } from "@/components/top-nav"
@@ -24,6 +24,30 @@ function AppContent() {
   const [activeView, setActiveView] = useState("")
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
+  const currentView =
+    activeView || (user?.role === "OWNER" ? "dashboard" : "rp-dashboard")
+
+  function navigate(view: string) {
+    setActiveView(view)
+    window.history.pushState({ view }, "")
+  }
+
+  useEffect(() => {
+    if (isLoggedIn) {
+      window.history.replaceState({ view: currentView }, "")
+    }
+  }, [isLoggedIn, currentView])
+
+  useEffect(() => {
+    const handler = (e: PopStateEvent) => {
+      const defaultView = user?.role === "OWNER" ? "dashboard" : "rp-dashboard"
+      setActiveView(e.state?.view ?? defaultView)
+    }
+
+    window.addEventListener("popstate", handler)
+    return () => window.removeEventListener("popstate", handler)
+  }, [user?.role])
+
   if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#f8fafc]">
@@ -36,30 +60,41 @@ function AppContent() {
     return <LoginScreen />
   }
 
-  const currentView = activeView || (user?.role === "OWNER" ? "dashboard" : "rp-dashboard")
+  const myFacilityIds =
+    user?.role === "OWNER"
+      ? facilities.filter((f) => f.orgId === userOrgId).map((f) => f.id)
+      : []
 
-  const myFacilityIds = user?.role === "OWNER"
-    ? facilities.filter((f) => f.orgId === userOrgId).map((f) => f.id)
-    : []
   const pendingCount = applications.filter(
-    (a) => myFacilityIds.includes(a.rcfId) && a.status === "SUBMITTED"
+    (a) => myFacilityIds.includes(a.rcfId) && a.status === "SUBMITTED",
   ).length
 
   function renderContent() {
     switch (currentView) {
-      case "dashboard":    return <OwnerDashboard onNavigate={setActiveView} />
-      case "my-facility":  return <OwnerFacilities />
-      case "interests":    return <OwnerInterests />
-      case "settings":     return user?.role === "RP" ? <RpSettings /> : <OwnerSettings />
-      case "facilities":   return <ReferrerFacilities />
-      case "applicants":   return <RpApplicants />
-      case "my-interests": return <ReferrerRegistrations />
-      case "rp-dashboard": return <RpDashboard onNavigate={setActiveView} />
-      case "profile":      return <ProfilePage />
+      case "dashboard":
+        return <OwnerDashboard onNavigate={navigate} />
+      case "my-facility":
+        return <OwnerFacilities />
+      case "interests":
+        return <OwnerInterests />
+      case "settings":
+        return user?.role === "RP" ? <RpSettings /> : <OwnerSettings />
+      case "facilities":
+        return <ReferrerFacilities />
+      case "applicants":
+        return <RpApplicants />
+      case "my-interests":
+        return <ReferrerRegistrations />
+      case "rp-dashboard":
+        return <RpDashboard onNavigate={navigate} />
+      case "profile":
+        return <ProfilePage />
       default:
-        return user?.role === "OWNER"
-          ? <OwnerDashboard onNavigate={setActiveView} />
-          : <RpDashboard onNavigate={setActiveView} />
+        return user?.role === "OWNER" ? (
+          <OwnerDashboard onNavigate={navigate} />
+        ) : (
+          <RpDashboard onNavigate={navigate} />
+        )
     }
   }
 
@@ -68,41 +103,32 @@ function AppContent() {
       <ProfileCompletionModal />
       <OrgCreationModal />
 
-      {/* Desktop top nav */}
       <div className="hidden lg:block">
         <TopNav />
       </div>
 
-      {/* Mobile header */}
       <div className="lg:hidden">
         <MobileHeader
           activeView={currentView}
-          onNavigate={setActiveView}
+          onNavigate={navigate}
           open={mobileMenuOpen}
           onOpenChange={setMobileMenuOpen}
         />
       </div>
 
-      {/* Desktop sidebar */}
       <div className="hidden lg:block">
         <AppSidebar
           activeView={currentView}
-          onNavigate={setActiveView}
+          onNavigate={navigate}
           pendingCount={pendingCount}
         />
       </div>
 
-      {/* Desktop main content */}
       <main className="hidden lg:block ml-[220px] mt-[68px] min-h-[calc(100vh-68px)] p-8">
-        <div className="mx-auto max-w-[1100px]">
-          {renderContent()}
-        </div>
+        <div className="mx-auto max-w-[1100px]">{renderContent()}</div>
       </main>
 
-      {/* Mobile main content */}
-      <main className="block lg:hidden p-4">
-        {renderContent()}
-      </main>
+      <main className="block lg:hidden p-4">{renderContent()}</main>
     </div>
   )
 }

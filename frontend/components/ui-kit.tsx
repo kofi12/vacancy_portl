@@ -1,7 +1,10 @@
 "use client"
 
-import React from "react"
-import { Loader2 } from "lucide-react"
+import React, { useState, useRef, useEffect } from "react"
+import { Loader2, ChevronLeft, ChevronRight, CalendarIcon } from "lucide-react"
+import { DayPicker } from "react-day-picker"
+import { format, parse, isValid } from "date-fns"
+import "react-day-picker/dist/style.css"
 
 // ── Btn ─────────────────────────────────────────────────────────────────────
 type BtnVariant = "primary" | "secondary" | "ghost" | "danger" | "success" | "outline"
@@ -146,3 +149,141 @@ export function FieldGroup({ label, required, children }: {
 // ── Shared class strings ─────────────────────────────────────────────────────
 export const cardCls = "bg-white rounded-[16px] border border-[#f1f5f9] shadow-[0_1px_4px_rgba(0,0,0,0.05)]"
 export const inputCls = "w-full rounded-[9px] border border-[#e2e8f0] bg-white px-3 py-[9px] text-[14px] text-[#0f172a] outline-none transition-colors focus:border-[#2563eb] font-[inherit]"
+
+// ── DatePicker ───────────────────────────────────────────────────────────────
+export function DatePicker({
+  value,
+  onChange,
+  placeholder = "Select a date",
+}: {
+  value: string
+  onChange: (v: string) => void
+  placeholder?: string
+}) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  const selected = value ? parse(value, "yyyy-MM-dd", new Date()) : undefined
+  const validSelected = selected && isValid(selected) ? selected : undefined
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [])
+
+  return (
+    <div ref={ref} className="relative w-full">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="w-full rounded-[9px] border border-[#e2e8f0] bg-white px-3 py-[9px] text-[14px] outline-none transition-colors focus:border-[#2563eb] font-[inherit] flex items-center justify-between gap-2 cursor-pointer"
+        style={{ color: validSelected ? "#0f172a" : "#94a3b8" }}
+      >
+        <span>{validSelected ? format(validSelected, "MMMM d, yyyy") : placeholder}</span>
+        <CalendarIcon className="h-4 w-4 shrink-0 text-[#94a3b8]" />
+      </button>
+
+      {open && (
+        <div
+          className="absolute left-0 top-[calc(100%+6px)] z-[1100] bg-white"
+          style={{
+            borderRadius: 16,
+            border: "1px solid #e2e8f0",
+            boxShadow: "0 4px 20px rgba(0,0,0,0.12)",
+            padding: "12px",
+            // CSS custom properties for react-day-picker v9 theming
+            "--rdp-accent-color": "#2563eb",
+            "--rdp-accent-background-color": "#eff6ff",
+            "--rdp-day_button-border-radius": "9px",
+            "--rdp-day_button-height": "36px",
+            "--rdp-day_button-width": "36px",
+          } as React.CSSProperties}
+        >
+          <DayPicker
+            mode="single"
+            selected={validSelected}
+            onSelect={(day) => {
+              if (day) {
+                onChange(format(day, "yyyy-MM-dd"))
+                setOpen(false)
+              }
+            }}
+            captionLayout="dropdown"
+            startMonth={new Date(1920, 0)}
+            endMonth={new Date(new Date().getFullYear(), 11)}
+            components={{
+              Chevron: ({ orientation }) =>
+                orientation === "left"
+                  ? <ChevronLeft className="h-4 w-4" />
+                  : <ChevronRight className="h-4 w-4" />,
+            }}
+            classNames={{
+              caption_label: "hidden",
+              dropdown: "text-[13px] border border-[#e2e8f0] rounded-[7px] px-2 py-1 bg-white text-[#0f172a] outline-none cursor-pointer",
+              button_previous: "flex h-7 w-7 items-center justify-center rounded-[7px] text-[#64748b] hover:bg-[#f1f5f9] transition-colors cursor-pointer",
+              button_next: "flex h-7 w-7 items-center justify-center rounded-[7px] text-[#64748b] hover:bg-[#f1f5f9] transition-colors cursor-pointer",
+              weekday: "text-[11px] font-bold text-[#94a3b8]",
+              outside: "opacity-30",
+              today: "font-bold",
+            }}
+          />
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── SearchableSelect ──────────────────────────────────────────────────────────
+export function SearchableSelect<T extends { id: string }>({
+  items,
+  selected,
+  onSelect,
+  getSearchText,
+  renderItem,
+  placeholder = "Search…",
+}: {
+  items: T[]
+  selected: string
+  onSelect: (id: string) => void
+  getSearchText: (item: T) => string
+  renderItem: (item: T, isSelected: boolean) => React.ReactNode
+  placeholder?: string
+}) {
+  const [query, setQuery] = useState("")
+  const filtered = query
+    ? items.filter(i => getSearchText(i).toLowerCase().includes(query.toLowerCase()))
+    : items
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      <input
+        className={inputCls}
+        placeholder={placeholder}
+        value={query}
+        onChange={e => setQuery(e.target.value)}
+      />
+      <div className="flex flex-col gap-1 max-h-[220px] overflow-y-auto">
+        {filtered.length === 0 && (
+          <p className="text-[13px] text-[#94a3b8] px-1 py-2">No matches.</p>
+        )}
+        {filtered.map(item => (
+          <button
+            key={item.id}
+            type="button"
+            onClick={() => onSelect(item.id)}
+            className="rounded-[9px] border-2 p-3 text-left text-[14px] transition-all cursor-pointer font-[inherit]"
+            style={{
+              borderColor: selected === item.id ? "#2563eb" : "#e2e8f0",
+              background: selected === item.id ? "#eff6ff" : "#fff",
+            }}
+          >
+            {renderItem(item, selected === item.id)}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}

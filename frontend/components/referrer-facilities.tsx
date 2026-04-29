@@ -1,11 +1,12 @@
 "use client"
 
 import { useState } from "react"
-import { useApp, type Facility } from "@/lib/app-context"
-import { Btn, StatusChip, SimpleModal, PageHeader, FieldGroup, cardCls, inputCls } from "@/components/ui-kit"
-import { Building2, Search, MapPin, Phone, RefreshCw, Plus, CheckCircle2, Loader2 } from "lucide-react"
+import { useApp, type Facility, type Application } from "@/lib/app-context"
+import { Btn, StatusChip, SimpleModal, PageHeader, FieldGroup, DatePicker, cardCls, inputCls } from "@/components/ui-kit"
+import { Search, MapPin, Phone, RefreshCw } from "lucide-react"
 import { handleApiError } from "@/lib/handle-error"
 import { formatDistanceToNow } from "date-fns"
+import { ApplicationDocsModal } from "@/components/application-docs-modal"
 
 export function ReferrerFacilities() {
   const { user, facilities, applicants, submitApplication, createApplicant, refreshFacilities } = useApp()
@@ -17,10 +18,11 @@ export function ReferrerFacilities() {
   const [newName, setNewName]           = useState("")
   const [newDob, setNewDob]             = useState("")
   const [newCareNeeds, setNewCareNeeds] = useState("")
-  const [showSuccess, setShowSuccess]   = useState(false)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isRefreshing, setIsRefreshing] = useState(false)
-  const [lastRefreshed, setLastRefreshed] = useState(new Date())
+  const [isSubmitting, setIsSubmitting]     = useState(false)
+  const [isRefreshing, setIsRefreshing]     = useState(false)
+  const [lastRefreshed, setLastRefreshed]   = useState(new Date())
+  const [pendingApplication, setPendingApplication] = useState<Application | null>(null)
+  const [pendingTitle, setPendingTitle]     = useState("")
 
   const myApplicants = applicants.filter((a) => a.rpId === user?.id)
 
@@ -51,10 +53,10 @@ export function ReferrerFacilities() {
         const created = await createApplicant(newName, newDob, ageFromDob(newDob), newCareNeeds)
         applicantId = created.id
       }
-      await submitApplication(applyFacility.id, applicantId)
+      const application = await submitApplication(applyFacility.id, applicantId)
+      setPendingTitle(`Apply to ${applyFacility.name}`)
       setApplyFacility(null)
-      setShowSuccess(true)
-      setTimeout(() => setShowSuccess(false), 3000)
+      setPendingApplication(application)
     } catch (e) { handleApiError(e) }
     finally { setIsSubmitting(false) }
   }
@@ -88,7 +90,7 @@ export function ReferrerFacilities() {
           <input
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search facilities…"
+            placeholder="Search RCFs…"
             className={`${inputCls} pl-9`}
           />
         </div>
@@ -146,7 +148,7 @@ export function ReferrerFacilities() {
                 variant={hasOpenings ? "primary" : "secondary"}
                 onClick={() => hasOpenings && openApply(f)}
               >
-                {hasOpenings ? "Submit Application" : "No Openings"}
+                {hasOpenings ? "Apply" : "No Openings"}
               </Btn>
             </div>
           )
@@ -156,7 +158,7 @@ export function ReferrerFacilities() {
       {filtered.length === 0 && (
         <div className={`${cardCls} flex flex-col items-center justify-center py-16`}>
           <Search className="mb-3 h-10 w-10 text-[#94a3b8]" />
-          <p className="text-[14px] text-[#64748b]">No facilities match your search criteria.</p>
+          <p className="text-[14px] text-[#64748b]">No RCFs match your search criteria.</p>
         </div>
       )}
 
@@ -172,21 +174,16 @@ export function ReferrerFacilities() {
         </p>
 
         <FieldGroup label="Applicant">
-          <div className="flex flex-col gap-2">
-            {myApplicants.map((a) => (
-              <button key={a.id} type="button" onClick={() => setSelectedApplicantId(a.id)}
-                className="rounded-[9px] border-2 p-3 text-left text-[14px] transition-all cursor-pointer font-[inherit]"
-                style={{ borderColor: selectedApplicantId === a.id ? "#2563eb" : "#e2e8f0", background: selectedApplicantId === a.id ? "#eff6ff" : "#fff" }}>
-                <span className="font-semibold text-[#0f172a]">{a.name}</span>
-                <span className="ml-2 text-[12px] text-[#64748b]">Age {a.age} — {a.careNeeds}</span>
-              </button>
+          <select
+            value={selectedApplicantId}
+            onChange={(e) => setSelectedApplicantId(e.target.value)}
+            className={inputCls}
+          >
+            {myApplicants.map(a => (
+              <option key={a.id} value={a.id}>{a.name} — Age {a.age}</option>
             ))}
-            <button type="button" onClick={() => setSelectedApplicantId("new")}
-              className="flex items-center gap-2 rounded-[9px] border-2 p-3 text-[14px] transition-all cursor-pointer font-[inherit]"
-              style={{ borderColor: selectedApplicantId === "new" ? "#2563eb" : "#e2e8f0", background: selectedApplicantId === "new" ? "#eff6ff" : "#fff", color: selectedApplicantId === "new" ? "#2563eb" : "#64748b" }}>
-              <Plus className="h-4 w-4" /> New applicant
-            </button>
-          </div>
+            <option value="new">+ New applicant</option>
+          </select>
         </FieldGroup>
 
         {selectedApplicantId === "new" && (
@@ -195,7 +192,7 @@ export function ReferrerFacilities() {
               <input className={inputCls} placeholder="Prospective resident's full name" value={newName} onChange={(e) => setNewName(e.target.value)} />
             </FieldGroup>
             <FieldGroup label="Date of Birth" required>
-              <input type="date" className={inputCls} value={newDob} onChange={(e) => setNewDob(e.target.value)} />
+              <DatePicker value={newDob} onChange={setNewDob} placeholder="Select date of birth" />
             </FieldGroup>
             <FieldGroup label="Care Needs" required>
               <textarea rows={2} className="w-full resize-y rounded-[9px] border border-[#e2e8f0] bg-white px-3 py-[9px] text-[14px] text-[#0f172a] outline-none focus:border-[#2563eb] font-[inherit]"
@@ -207,21 +204,17 @@ export function ReferrerFacilities() {
         <div className="flex justify-end gap-2">
           <Btn variant="secondary" onClick={() => setApplyFacility(null)}>Cancel</Btn>
           <Btn disabled={!canSubmit} loading={isSubmitting} onClick={handleApply}>
-            Submit Application
+            Apply
           </Btn>
         </div>
       </SimpleModal>
 
-      {/* Success Modal */}
-      <SimpleModal open={showSuccess} onClose={() => setShowSuccess(false)} title="" width={360}>
-        <div className="flex flex-col items-center py-3 text-center">
-          <div className="mb-3.5 flex h-[52px] w-[52px] items-center justify-center rounded-full bg-[#f0fdf4]">
-            <CheckCircle2 className="h-7 w-7 text-[#16a34a]" />
-          </div>
-          <div className="text-[18px] font-bold text-[#0f172a]">Application Submitted</div>
-          <div className="mt-1.5 text-[14px] text-[#64748b]">The facility owner will be in touch.</div>
-        </div>
-      </SimpleModal>
+      <ApplicationDocsModal
+        application={pendingApplication}
+        title={pendingTitle}
+        isOpen={!!pendingApplication}
+        onClose={() => setPendingApplication(null)}
+      />
     </div>
   )
 }

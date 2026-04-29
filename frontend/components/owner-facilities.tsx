@@ -22,6 +22,7 @@ export function OwnerFacilities() {
   const [formsLoading, setFormsLoading] = useState(false)
   const [uploadFile, setUploadFile] = useState<File | null>(null)
   const [uploadTitle, setUploadTitle] = useState("")
+  const [uploadFormType, setUploadFormType] = useState("CUSTOM")
   const [isUploading, setIsUploading] = useState(false)
 
   const [showCreate, setShowCreate] = useState(false)
@@ -58,11 +59,11 @@ export function OwnerFacilities() {
       fd.append("file", uploadFile)
       fd.append("rcfId", formsFacility.id)
       fd.append("title", uploadTitle || uploadFile.name)
-      fd.append("formType", "CUSTOM")
+      fd.append("formType", uploadFormType)
       fd.append("contentType", "PDF")
       const created = await apiClient.postForm<RcfForm>("/rcf-forms", fd)
       setRcfForms((p) => [...p, created])
-      setUploadFile(null); setUploadTitle("")
+      setUploadFile(null); setUploadTitle(""); setUploadFormType("CUSTOM")
     } catch (e) { handleApiError(e) }
     finally { setIsUploading(false) }
   }
@@ -117,7 +118,7 @@ export function OwnerFacilities() {
       {myFacilities.length === 0 && (
         <div className={`${cardCls} flex flex-col items-center justify-center py-16`}>
           <Building2 className="mb-3 h-10 w-10 text-[#94a3b8]" />
-          <p className="text-[14px] text-[#64748b]">No RCFs yet. Add your first facility above.</p>
+          <p className="text-[14px] text-[#64748b]">No RCFs yet. Add your first RCF above.</p>
         </div>
       )}
 
@@ -240,6 +241,17 @@ export function OwnerFacilities() {
             <input className={inputCls} placeholder="e.g. Intake Form" value={uploadTitle}
               onChange={(e) => setUploadTitle(e.target.value)} required />
           </FieldGroup>
+          <FieldGroup label="Form Type">
+            <select
+              value={uploadFormType}
+              onChange={(e) => setUploadFormType(e.target.value)}
+              className={inputCls}
+            >
+              <option value="INTAKE_FORM">Intake Form</option>
+              <option value="SCHEDULE_20">Schedule 20</option>
+              <option value="CUSTOM">Custom</option>
+            </select>
+          </FieldGroup>
           <FieldGroup label="PDF File">
             <input type="file" accept=".pdf" className={inputCls} onChange={(e) => setUploadFile(e.target.files?.[0] ?? null)} required />
           </FieldGroup>
@@ -252,7 +264,7 @@ export function OwnerFacilities() {
       {/* Create RCF Modal */}
       <SimpleModal open={showCreate} onClose={() => setShowCreate(false)} title="Add RCF" width={480}>
         <form onSubmit={handleCreate} className="flex flex-col gap-4">
-          <FieldGroup label="Facility Name" required>
+          <FieldGroup label="RCF Name" required>
             <input className={inputCls} placeholder="Sunrise Care Home" value={newName} onChange={(e) => setNewName(e.target.value)} required />
           </FieldGroup>
           <FieldGroup label="Address" required>

@@ -1,12 +1,14 @@
 "use client"
 
-import { useApp, type Application } from "@/lib/app-context"
-import { StatusChip, PageHeader, cardCls } from "@/components/ui-kit"
+import { useState } from "react"
+import { useApp, type Application, type Facility } from "@/lib/app-context"
+import { StatusChip, PageHeader, cardCls, Btn, SimpleModal } from "@/components/ui-kit"
+import { ApplicationDocsModal } from "@/components/application-docs-modal"
 import { Building2, ClipboardList, Users, TrendingUp } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 
 const STATUS_LABEL: Record<Application["status"], string> = {
-  SUBMITTED: "Submitted", IN_REVIEW: "In Review", ACCEPTED: "Accepted", DECLINED: "Declined",
+  PENDING: "Pending", SUBMITTED: "Submitted", IN_REVIEW: "In Review", ACCEPTED: "Accepted", DECLINED: "Declined",
 }
 
 interface RpDashboardProps {
@@ -15,6 +17,8 @@ interface RpDashboardProps {
 
 export function RpDashboard({ onNavigate }: RpDashboardProps) {
   const { user, applications, facilities, applicants } = useApp()
+  const [selectedRcf, setSelectedRcf] = useState<Facility | null>(null)
+  const [selectedApp, setSelectedApp] = useState<Application | null>(null)
 
   const myApps = applications
     .filter((a) => a.rpId === user?.id)
@@ -42,7 +46,7 @@ export function RpDashboard({ onNavigate }: RpDashboardProps) {
       onClick: () => onNavigate("my-interests"),
     },
     {
-      label: "Facilities Available",
+      label: "RCFs Available",
       value: rcfsWithVacancies.length,
       icon: Building2,
       color: "#16a34a",
@@ -63,7 +67,7 @@ export function RpDashboard({ onNavigate }: RpDashboardProps) {
     <div className="flex flex-col gap-6">
       <PageHeader
         title={`Welcome, ${user?.fullName?.split(" ")[0] ?? "back"}`}
-        subtitle="Here's an overview of your applications and available facilities."
+        subtitle="Here's an overview of your applications and available RCFs."
       />
 
       {/* Stat cards */}
@@ -103,7 +107,7 @@ export function RpDashboard({ onNavigate }: RpDashboardProps) {
                 onClick={() => onNavigate("facilities")}
                 className="mt-2 cursor-pointer text-[13px] font-semibold text-[#2563eb] hover:underline"
               >
-                Browse facilities
+                Browse RCFs
               </button>
             </div>
           ) : (
@@ -112,7 +116,7 @@ export function RpDashboard({ onNavigate }: RpDashboardProps) {
               const applicant = applicants.find((a) => a.id === app.applicantId)
               const isLast = i === recentApps.length - 1
               return (
-                <div key={app.id} className={`flex items-center justify-between px-5 py-3.5 ${isLast ? "" : "border-b border-[#f1f5f9]"}`}>
+                <div key={app.id} className={`flex items-center justify-between px-5 py-3.5 cursor-pointer hover:bg-[#f8fafc] transition-colors ${isLast ? "" : "border-b border-[#f1f5f9]"}`} onClick={() => setSelectedApp(app)}>
                   <div className="min-w-0">
                     <div className="truncate text-[14px] font-semibold text-[#0f172a]">
                       {facility?.name ?? "Unknown Facility"}
@@ -136,7 +140,7 @@ export function RpDashboard({ onNavigate }: RpDashboardProps) {
         {/* RCFs with vacancies */}
         <div className={`${cardCls} overflow-hidden`}>
           <div className="flex items-center justify-between border-b border-[#f1f5f9] px-5 py-4">
-            <div className="text-[15px] font-bold text-[#0f172a]">Available Facilities</div>
+            <div className="text-[15px] font-bold text-[#0f172a]">Available RCFs</div>
             <button
               onClick={() => onNavigate("facilities")}
               className="cursor-pointer text-[13px] font-semibold text-[#2563eb] hover:underline"
@@ -153,7 +157,7 @@ export function RpDashboard({ onNavigate }: RpDashboardProps) {
             rcfsWithVacancies.slice(0, 5).map((f, i) => {
               const isLast = i === Math.min(rcfsWithVacancies.length, 5) - 1
               return (
-                <div key={f.id} className={`flex items-center justify-between px-5 py-3.5 ${isLast ? "" : "border-b border-[#f1f5f9]"}`}>
+                <div key={f.id} className={`flex items-center justify-between px-5 py-3.5 cursor-pointer hover:bg-[#f8fafc] transition-colors ${isLast ? "" : "border-b border-[#f1f5f9]"}`} onClick={() => setSelectedRcf(f)}>
                   <div className="min-w-0">
                     <div className="truncate text-[14px] font-semibold text-[#0f172a]">{f.name}</div>
                     {f.address && (
@@ -170,6 +174,44 @@ export function RpDashboard({ onNavigate }: RpDashboardProps) {
           )}
         </div>
       </div>
+
+      <SimpleModal
+        open={!!selectedRcf}
+        onClose={() => setSelectedRcf(null)}
+        title={selectedRcf?.name ?? ""}
+      >
+        {selectedRcf && (
+          <div className="flex flex-col gap-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="rounded-[10px] bg-[#f8fafc] p-3">
+                <div className="text-[11px] font-bold uppercase tracking-[.05em] text-[#94a3b8]">Licensed Beds</div>
+                <div className="mt-1 text-[20px] font-extrabold text-[#0f172a]">{selectedRcf.licensedBeds}</div>
+              </div>
+              <div className="rounded-[10px] bg-[#f8fafc] p-3">
+                <div className="text-[11px] font-bold uppercase tracking-[.05em] text-[#94a3b8]">Openings</div>
+                <div className="mt-1 text-[20px] font-extrabold text-[#16a34a]">{selectedRcf.currentOpenings}</div>
+              </div>
+            </div>
+            {selectedRcf.address && (
+              <p className="text-[14px] text-[#64748b]">{selectedRcf.address}</p>
+            )}
+            {selectedRcf.phone && (
+              <p className="text-[14px] text-[#64748b]">{selectedRcf.phone}</p>
+            )}
+            <div className="flex justify-end gap-2">
+              <Btn variant="secondary" onClick={() => setSelectedRcf(null)}>Close</Btn>
+              <Btn onClick={() => { setSelectedRcf(null); onNavigate("facilities") }}>Apply Now</Btn>
+            </div>
+          </div>
+        )}
+      </SimpleModal>
+
+      <ApplicationDocsModal
+        application={selectedApp}
+        title={selectedApp ? `Application — ${facilities.find(f => f.id === selectedApp.rcfId)?.name ?? ""}` : ""}
+        isOpen={!!selectedApp}
+        onClose={() => setSelectedApp(null)}
+      />
     </div>
   )
 }

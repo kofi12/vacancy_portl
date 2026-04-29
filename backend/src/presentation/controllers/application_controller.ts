@@ -56,6 +56,7 @@ applicationController.patch('/:id/status', async (c) => {
         return c.json({ message: `Invalid status. Must be one of: ${validStatuses.join(', ')}` }, 422);
     }
 
+
     try {
         const result = await applicationService.updateApplicationStatus({ applicationId, status, declineReason });
         return c.json(result);

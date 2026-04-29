@@ -1,7 +1,9 @@
 "use client"
 
-import { useApp } from "@/lib/app-context"
+import { useState } from "react"
+import { useApp, type Application } from "@/lib/app-context"
 import { StatusChip, cardCls } from "@/components/ui-kit"
+import { ApplicationDocsModal } from "@/components/application-docs-modal"
 import { formatDistanceToNow } from "date-fns"
 
 function StatCard({ label, value, sub, accent, icon }: {
@@ -23,6 +25,7 @@ function StatCard({ label, value, sub, accent, icon }: {
 
 export function OwnerDashboard({ onNavigate }: { onNavigate: (view: string) => void }) {
   const { user, userOrgId, facilities, applications } = useApp()
+  const [selectedApp, setSelectedApp] = useState<Application | null>(null)
 
   const myFacilities = facilities.filter((f) => f.orgId === userOrgId)
   const myApps       = applications.filter((a) => myFacilities.some((f) => f.id === a.rcfId))
@@ -50,12 +53,12 @@ export function OwnerDashboard({ onNavigate }: { onNavigate: (view: string) => v
         </h2>
         <p className="mt-1 text-[14px] text-[#64748b]">
           {"Here's an overview of "}
-          {myFacilities[0]?.name ?? "your facilities"}.
+          {myFacilities[0]?.name ?? "your RCFs"}.
         </p>
       </div>
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatCard label="My Facilities"      value={myFacilities.length} icon="🏥" sub="Total facilities" />
+        <StatCard label="My RCFs"             value={myFacilities.length} icon="🏥" sub="Total facilities" />
         <StatCard label="Licensed Beds"      value={totalBeds}           icon="🛏"  sub="Total capacity" />
 
         {/* Openings card — inline because it needs a chip */}
@@ -99,7 +102,7 @@ export function OwnerDashboard({ onNavigate }: { onNavigate: (view: string) => v
             recentApps.map((a) => {
               const facility = myFacilities.find((f) => f.id === a.rcfId)
               return (
-                <div key={a.id} className="flex items-center justify-between border-b border-[#f1f5f9] px-5 py-3">
+                <div key={a.id} className="flex cursor-pointer items-center justify-between border-b border-[#f1f5f9] px-5 py-3 transition-colors hover:bg-[#f8fafc]" onClick={() => setSelectedApp(a)}>
                   <div>
                     <div className="text-[14px] font-semibold text-[#0f172a]">
                       {facility?.name ?? "Unknown Facility"}
@@ -120,7 +123,7 @@ export function OwnerDashboard({ onNavigate }: { onNavigate: (view: string) => v
           <div className="mb-4 text-[15px] font-bold text-[#0f172a]">Quick Actions</div>
           <div className="mb-6 flex flex-col gap-2.5">
             {[
-              { label: "🏥 Update Facility Info", view: "my-facility" },
+              { label: "🏥 Update RCF Info",      view: "my-facility" },
               { label: "📋 Review Applications",  view: "interests" },
               { label: "👤 My Profile",           view: "profile" },
             ].map(({ label, view }) => (
@@ -146,6 +149,13 @@ export function OwnerDashboard({ onNavigate }: { onNavigate: (view: string) => v
           </div>
         </div>
       </div>
+
+      <ApplicationDocsModal
+        application={selectedApp}
+        title={selectedApp ? `Application — ${myFacilities.find(f => f.id === selectedApp.rcfId)?.name ?? ""}` : ""}
+        isOpen={!!selectedApp}
+        onClose={() => setSelectedApp(null)}
+      />
     </div>
   )
 }
