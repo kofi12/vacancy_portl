@@ -67,7 +67,7 @@ export function ProfileCompletionModal() {
               required
             />
           </div>
-          <Button type="submit" className="mt-2 w-full rounded-xl" size="lg" disabled={isSubmitting}>
+          <Button type="submit" className="mt-2 w-full rounded-xl bg-[#2563eb] hover:bg-[#1d4ed8] text-white" size="lg" disabled={isSubmitting}>
             {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Complete Profile
           </Button>

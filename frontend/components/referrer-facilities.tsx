@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useApp, type Facility, type Application } from "@/lib/app-context"
-import { Btn, StatusChip, SimpleModal, PageHeader, FieldGroup, cardCls, inputCls } from "@/components/ui-kit"
+import { Btn, StatusChip, SimpleModal, PageHeader, FieldGroup, DatePicker, cardCls, inputCls } from "@/components/ui-kit"
 import { Search, MapPin, Phone, RefreshCw } from "lucide-react"
 import { handleApiError } from "@/lib/handle-error"
 import { formatDistanceToNow } from "date-fns"
@@ -192,7 +192,7 @@ export function ReferrerFacilities() {
               <input className={inputCls} placeholder="Prospective resident's full name" value={newName} onChange={(e) => setNewName(e.target.value)} />
             </FieldGroup>
             <FieldGroup label="Date of Birth" required>
-              <input type="date" className={inputCls} value={newDob} onChange={(e) => setNewDob(e.target.value)} />
+              <DatePicker value={newDob} onChange={setNewDob} placeholder="Select date of birth" />
             </FieldGroup>
             <FieldGroup label="Care Needs" required>
               <textarea rows={2} className="w-full resize-y rounded-[9px] border border-[#e2e8f0] bg-white px-3 py-[9px] text-[14px] text-[#0f172a] outline-none focus:border-[#2563eb] font-[inherit]"

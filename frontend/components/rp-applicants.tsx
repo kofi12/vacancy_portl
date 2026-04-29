@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useApp, type Application } from "@/lib/app-context"
-import { Btn, SimpleModal, PageHeader, FieldGroup, SearchableSelect, cardCls, inputCls } from "@/components/ui-kit"
+import { Btn, SimpleModal, PageHeader, FieldGroup, SearchableSelect, DatePicker, cardCls, inputCls } from "@/components/ui-kit"
 import { Users, Plus, Calendar, Heart } from "lucide-react"
 import { handleApiError } from "@/lib/handle-error"
 import { ApplicationDocsModal } from "@/components/application-docs-modal"
@@ -125,7 +125,7 @@ export function RpApplicants() {
           <input className={inputCls} placeholder="Prospective resident's full name" value={newName} onChange={(e) => setNewName(e.target.value)} />
         </FieldGroup>
         <FieldGroup label="Date of Birth" required>
-          <input type="date" className={inputCls} value={newDob} onChange={(e) => setNewDob(e.target.value)} />
+          <DatePicker value={newDob} onChange={setNewDob} placeholder="Select date of birth" />
         </FieldGroup>
         <FieldGroup label="Care Needs" required>
           <textarea
